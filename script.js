@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
             osc.start();
             osc.stop(ctx.currentTime + 0.6);
         } catch(e) {
-            console.log('Audio Context error or not allowed yet');
+            console.log('Audio Context error');
         }
     }
 
@@ -33,6 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (enableNotificationsBtn) {
+        // التأكد من إظهار الزر دائماً أو حسب الحاجة
+        if ('Notification' in window && Notification.permission === 'granted') {
+            enableNotificationsBtn.style.display = 'inline-flex';
+            enableNotificationsBtn.innerHTML = '<span class="material-symbols-symbols">notifications_active</span> الإشعارات مفعلة';
+        }
+
         enableNotificationsBtn.addEventListener('click', () => {
             if (!('Notification' in window)) {
                 alert('المتصفح لديك لا يدعم إشعارات النظام.');
@@ -41,29 +47,35 @@ document.addEventListener('DOMContentLoaded', () => {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
                     sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', {
-                        body: 'ستتلقى تنبيهات مباشرة عند اكتمال جلسات البومودورو والمهام.'
+                        body: 'ستتلقى تنبيهات مباشرة عند اكتمال الجلسات والمهام.'
                     });
-                    enableNotificationsBtn.style.display = 'none';
+                    enableNotificationsBtn.innerHTML = '<span class="material-symbols-symbols">notifications_active</span> الإشعارات مفعلة';
                 } else {
                     alert('تم رفض صلاحية الإشعارات.');
                 }
             });
         });
-
-        if ('Notification' in window && Notification.permission === 'granted') {
-            enableNotificationsBtn.style.display = 'none';
-        }
     }
 
-    // 2. التنقل والقائمة الجانبية
+    // 2. التنقل والقائمة الجانبية (زر الأشرطة الثلاثة للهاتف)
     const navBtns = document.querySelectorAll('.nav-btn');
     const appPages = document.querySelectorAll('.app-page');
     const mobileToggle = document.getElementById('mobileNavToggle');
-    const navMenu = document.querySelector('.nav-menu');
+    const sidebar = document.querySelector('.sidebar');
 
-    if (mobileToggle) {
-        mobileToggle.addEventListener('click', () => {
-            if (navMenu) navMenu.classList.toggle('active');
+    if (mobileToggle && sidebar) {
+        mobileToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebar.classList.toggle('active');
+        });
+
+        // إغلاق القائمة عند النقر خارجها في الهاتف
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !mobileToggle.contains(e.target)) {
+                    sidebar.classList.remove('active');
+                }
+            }
         });
     }
 
@@ -75,11 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
             navBtns.forEach(b => b.classList.remove('active'));
             appPages.forEach(p => p.classList.remove('active'));
 
+            // تفعيل الأزرار المتطابقة في القائمة (سواء بالجانب أو غيره)
             document.querySelectorAll(`[data-page="${targetPage}"]`).forEach(b => b.classList.add('active'));
             const targetSection = document.getElementById(targetPage);
             if (targetSection) targetSection.classList.add('active');
 
-            if (navMenu) navMenu.classList.remove('active');
+            if (sidebar && window.innerWidth <= 768) {
+                sidebar.classList.remove('active');
+            }
 
             if (targetPage === 'stats-page') {
                 renderCharts();
@@ -143,15 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             li.addEventListener('click', () => {
-                const isNowCompleted = !tasks[index].completed;
-                tasks[index].completed = isNowCompleted;
-                
-                if (isNowCompleted) {
-                    sendNotification('أحسنت! 👏', {
-                        body: `أنجزت المهمة: "${task.text}"`
-                    });
+                tasks[index].completed = !tasks[index].completed;
+                if (tasks[index].completed) {
+                    sendNotification('أحسنت! 👏', { body: `أنجزت المهمة: "${task.text}"` });
                 }
-                
                 saveTasks();
             });
 
@@ -170,15 +180,10 @@ document.addEventListener('DOMContentLoaded', () => {
         saveTasks();
     }
 
-    if (addBtn) {
-        addBtn.addEventListener('click', addNewTask);
-    }
-
+    if (addBtn) addBtn.addEventListener('click', addNewTask);
     if (taskInput) {
         taskInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addNewTask();
-            }
+            if (e.key === 'Enter') addNewTask();
         });
     }
 
@@ -230,23 +235,18 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 clearInterval(timerInterval);
                 timerInterval = null;
-                
-                sendNotification('انتهت جلسة التركيز! 🎉', {
-                    body: 'حان وقت الاستراحة أو الانتقال للمهمة التالية.'
-                });
+                sendNotification('انتهت جلسة التركيز! 🎉', { body: 'حان وقت الاستراحة.' });
             }
         }, 1000);
     }
 
     if (startTimerBtn) startTimerBtn.addEventListener('click', startTimer);
-
     if (pauseTimerBtn) {
         pauseTimerBtn.addEventListener('click', () => {
             clearInterval(timerInterval);
             timerInterval = null;
         });
     }
-
     if (resetTimerBtn) {
         resetTimerBtn.addEventListener('click', () => {
             clearInterval(timerInterval);
@@ -260,28 +260,17 @@ document.addEventListener('DOMContentLoaded', () => {
         quickPomodoroBtn.addEventListener('click', () => {
             navBtns.forEach(b => b.classList.remove('active'));
             appPages.forEach(p => p.classList.remove('active'));
-
-            const pomodoroNavBtn = document.querySelector('[data-page="pomodoro-page"]');
+            document.querySelectorAll('[data-page="pomodoro-page"]').forEach(b => b.classList.add('active'));
             const pomodoroPage = document.getElementById('pomodoro-page');
-
-            if (pomodoroNavBtn && pomodoroPage) {
-                pomodoroNavBtn.classList.add('active');
-                pomodoroPage.classList.add('active');
-            }
-
-            clearInterval(timerInterval);
-            timerInterval = null;
-            timeLeft = totalTime;
-            updateTimer();
+            if (pomodoroPage) pomodoroPage.classList.add('active');
             startTimer();
         });
     }
 
-    // 5. إدارة التحديات اليومية
+    // 5. التحديات اليومية
     let challenges = JSON.parse(localStorage.getItem('my_challenges')) || [
-        { id: 1, title: 'تحدي 21 يوم قراءة وتركيز', days: [true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false] }
+        { id: 1, title: 'تحدي 21 يوم قراءة وتركيز', days: new Array(21).fill(false) }
     ];
-
     const challengesContainer = document.getElementById('challengesContainer');
     const createChallengeBtn = document.getElementById('createChallengeBtn');
     const newChallengeInput = document.getElementById('newChallengeInput');
@@ -294,7 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderChallenges() {
         if (!challengesContainer) return;
         challengesContainer.innerHTML = '';
-
         const statActiveChallenges = document.getElementById('statActiveChallenges');
         if (statActiveChallenges) statActiveChallenges.textContent = challenges.length;
 
@@ -304,37 +292,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const card = document.createElement('div');
             card.className = 'challenge-card';
-
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'challenge-header';
-            headerDiv.innerHTML = `
-                <div class="challenge-title-group">
-                    <span class="challenge-title">${ch.title}</span>
-                    <span style="font-weight:bold; color:#10b981;">(${progressPercent}%)</span>
+            card.innerHTML = `
+                <div class="challenge-header">
+                    <div class="challenge-title-group">
+                        <span class="challenge-title">${ch.title}</span>
+                        <span style="font-weight:bold; color:#10b981;">(${progressPercent}%)</span>
+                    </div>
+                    <button class="delete-challenge-btn" data-index="${chIndex}"><span class="material-symbols-rounded">delete</span> حذف</button>
                 </div>
+                <div class="challenge-progress-bar"><div class="challenge-progress-fill" style="width: ${progressPercent}%"></div></div>
+                <div class="days-grid"></div>
             `;
 
-            const delBtn = document.createElement('button');
-            delBtn.className = 'delete-challenge-btn';
-            delBtn.innerHTML = `<span class="material-symbols-rounded">delete</span> حذف`;
-            delBtn.addEventListener('click', () => {
-                if (confirm('هل أنت متأكد من رغبتك في حذف هذا التحدي؟')) {
+            card.querySelector('.delete-challenge-btn').addEventListener('click', () => {
+                if (confirm('هل أنت متأكد من حذف هذا التحدي؟')) {
                     challenges.splice(chIndex, 1);
                     saveChallenges();
                 }
             });
 
-            headerDiv.appendChild(delBtn);
-            card.appendChild(headerDiv);
-
-            const progressDiv = document.createElement('div');
-            progressDiv.className = 'challenge-progress-bar';
-            progressDiv.innerHTML = `<div class="challenge-progress-fill" style="width: ${progressPercent}%"></div>`;
-            card.appendChild(progressDiv);
-
-            const daysGrid = document.createElement('div');
-            daysGrid.className = 'days-grid';
-
+            const daysGrid = card.querySelector('.days-grid');
             ch.days.forEach((done, dIndex) => {
                 const dayBtn = document.createElement('button');
                 dayBtn.className = `day-btn ${done ? 'completed' : ''}`;
@@ -346,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 daysGrid.appendChild(dayBtn);
             });
 
-            card.appendChild(daysGrid);
             challengesContainer.appendChild(card);
         });
     }
@@ -356,17 +332,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!newChallengeInput) return;
             const title = newChallengeInput.value.trim();
             if (!title) return alert('أدخل عنوان التحدي أولاً');
-            challenges.push({
-                id: Date.now(),
-                title: title,
-                days: new Array(21).fill(false)
-            });
+            challenges.push({ id: Date.now(), title, days: new Array(21).fill(false) });
             newChallengeInput.value = '';
             saveChallenges();
         });
     }
 
-    // 6. إدارة الملف الشخصي (Profile Management)
+    // 6. الملف الشخصي
     const userNameInput = document.getElementById('userNameInput');
     const userTitleInput = document.getElementById('userTitleInput');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
@@ -400,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveProfileBtn.addEventListener('click', () => {
             userProfile.name = userNameInput ? userNameInput.value.trim() : userProfile.name;
             userProfile.title = userTitleInput ? userTitleInput.value.trim() : userProfile.title;
-
             localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
             loadProfile();
             alert('تم حفظ البيانات الشخصية بنجاح! ✨');
@@ -428,28 +399,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderCharts() {
         if (typeof Chart === 'undefined') return;
-
         const weeklyCanvas = document.getElementById('weeklyChart');
         const statusCanvas = document.getElementById('statusChart');
-
         if (!weeklyCanvas || !statusCanvas) return;
-
-        const weeklyCtx = weeklyCanvas.getContext('2d');
-        const statusCtx = statusCanvas.getContext('2d');
 
         if (weeklyChartInstance) weeklyChartInstance.destroy();
         if (statusChartInstance) statusChartInstance.destroy();
 
-        weeklyChartInstance = new Chart(weeklyCtx, {
+        weeklyChartInstance = new Chart(weeklyCanvas.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
-                datasets: [{
-                    label: 'المهام المنجزة',
-                    data: [5, 7, 8, 6, 9, 4, 8],
-                    backgroundColor: '#6366f1',
-                    borderRadius: 8
-                }]
+                datasets: [{ label: 'المهام المنجزة', data: [5, 7, 8, 6, 9, 4, 8], backgroundColor: '#6366f1', borderRadius: 8 }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
@@ -457,20 +418,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const completedCount = tasks.filter(t => t.completed).length;
         const pendingCount = tasks.length - completedCount;
 
-        statusChartInstance = new Chart(statusCtx, {
+        statusChartInstance = new Chart(statusCanvas.getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['مكتملة', 'قيد الانتظار'],
-                datasets: [{
-                    data: [completedCount || (pendingCount === 0 ? 1 : 0), pendingCount],
-                    backgroundColor: ['#10b981', '#f59e0b']
-                }]
+                datasets: [{ data: [completedCount || (pendingCount === 0 ? 1 : 0), pendingCount], backgroundColor: ['#10b981', '#f59e0b'] }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    // التشغيل الابتدائي للمكونات
     loadProfile();
     updateUI();
     updateTimer();
