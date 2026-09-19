@@ -70,7 +70,6 @@ navBtns.forEach(btn => {
         navBtns.forEach(b => b.classList.remove('active'));
         appPages.forEach(p => p.classList.remove('active'));
 
-        // تفعيل الأزرار المقابلة للصفحة المحددة
         document.querySelectorAll(`[data-page="${targetPage}"]`).forEach(b => b.classList.add('active'));
         document.getElementById(targetPage).classList.add('active');
 
@@ -82,7 +81,7 @@ navBtns.forEach(btn => {
     });
 });
 
-// 3. إدارة المهام والملاحظات
+// 3. إدارة المهام والملاحظات (تخزين محلي جديد للعميل)
 const taskInput = document.getElementById('taskInput');
 const addBtn = document.getElementById('addBtn');
 const taskList = document.getElementById('taskList');
@@ -91,7 +90,9 @@ const percentageNumber = document.getElementById('percentageNumber');
 const progressText = document.getElementById('progressText');
 const quickNotes = document.getElementById('quickNotes');
 
+// تبدأ المصفوفة فارغة لكل مستخدم جديد
 let tasks = JSON.parse(localStorage.getItem('my_habits')) || [];
+
 if (quickNotes) {
     quickNotes.value = localStorage.getItem('my_quick_notes') || '';
     quickNotes.addEventListener('input', () => {
@@ -153,13 +154,15 @@ function updateUI() {
     });
 }
 
-addBtn.addEventListener('click', () => {
-    const text = taskInput.value.trim();
-    if (!text) return alert('يرجى كتابة نص المهمة أولاً');
-    tasks.push({ text, completed: false });
-    taskInput.value = '';
-    saveTasks();
-});
+if (addBtn) {
+    addBtn.addEventListener('click', () => {
+        const text = taskInput.value.trim();
+        if (!text) return alert('يرجى كتابة نص المهمة أولاً');
+        tasks.push({ text, completed: false });
+        taskInput.value = '';
+        saveTasks();
+    });
+}
 
 // 4. مؤقت بومودورو
 let timerInterval;
@@ -175,13 +178,14 @@ const modeBtns = document.querySelectorAll('.mode-btn');
 const quickPomodoroBtn = document.getElementById('quickPomodoroBtn');
 
 function updateTimer() {
+    if (!timerDisplay) return;
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
     timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
     const fullDash = 283;
     const offset = fullDash - (timeLeft / totalTime) * fullDash;
-    timerProgress.style.strokeDashoffset = offset;
+    if (timerProgress) timerProgress.style.strokeDashoffset = offset;
 }
 
 modeBtns.forEach(btn => {
@@ -214,19 +218,21 @@ function startTimer() {
     }, 1000);
 }
 
-startTimerBtn.addEventListener('click', startTimer);
-
-pauseTimerBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
-    timerInterval = null;
-});
-
-resetTimerBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    timeLeft = totalTime;
-    updateTimer();
-});
+if (startTimerBtn) startTimerBtn.addEventListener('click', startTimer);
+if (pauseTimerBtn) {
+    pauseTimerBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    });
+}
+if (resetTimerBtn) {
+    resetTimerBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timeLeft = totalTime;
+        updateTimer();
+    });
+}
 
 if (quickPomodoroBtn) {
     quickPomodoroBtn.addEventListener('click', () => {
@@ -249,10 +255,8 @@ if (quickPomodoroBtn) {
     });
 }
 
-// 5. التحديات اليومية
-let challenges = JSON.parse(localStorage.getItem('my_challenges')) || [
-    { id: 1, title: 'تحدي 21 يوم قراءة وتركيز', days: [true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false] }
-];
+// 5. التحديات اليومية (مفرغة تبدأ فارغة للمستخدم الجديد)
+let challenges = JSON.parse(localStorage.getItem('my_challenges')) || [];
 
 const challengesContainer = document.getElementById('challengesContainer');
 const createChallengeBtn = document.getElementById('createChallengeBtn');
@@ -264,6 +268,7 @@ function saveChallenges() {
 }
 
 function renderChallenges() {
+    if (!challengesContainer) return;
     challengesContainer.innerHTML = '';
 
     const statActiveChallenges = document.getElementById('statActiveChallenges');
@@ -314,19 +319,21 @@ window.deleteChallenge = function(chIndex) {
     }
 };
 
-createChallengeBtn.addEventListener('click', () => {
-    const title = newChallengeInput.value.trim();
-    if (!title) return alert('أدخل عنوان التحدي');
-    challenges.push({
-        id: Date.now(),
-        title: title,
-        days: new Array(21).fill(false)
+if (createChallengeBtn) {
+    createChallengeBtn.addEventListener('click', () => {
+        const title = newChallengeInput.value.trim();
+        if (!title) return alert('أدخل عنوان التحدي');
+        challenges.push({
+            id: Date.now(),
+            title: title,
+            days: new Array(21).fill(false)
+        });
+        newChallengeInput.value = '';
+        saveChallenges();
     });
-    newChallengeInput.value = '';
-    saveChallenges();
-});
+}
 
-// 6. إدارة الملف الشخصي (Profile Management)
+// 6. إدارة الملف الشخصي (قيم افتراضية عامة للمستخدم الجديد)
 const profileForm = document.getElementById('profileForm');
 const userNameInput = document.getElementById('userNameInput');
 const userTitleInput = document.getElementById('userTitleInput');
@@ -339,45 +346,49 @@ const profileAvatar = document.getElementById('profileAvatar');
 const sidebarAvatar = document.getElementById('sidebarAvatar');
 
 let userProfile = JSON.parse(localStorage.getItem('my_user_profile')) || {
-    name: 'علي المهدي',
-    title: 'مطور ومهندس إنتاجية',
-    avatar: 'https://ui-avatars.com/api/?name=Ali+Almhdi&background=4f46e5&color=fff'
+    name: 'مستخدم جديد',
+    title: 'عضو منجز',
+    avatar: 'https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff'
 };
 
 function loadProfile() {
-    profileDisplayName.textContent = userProfile.name;
-    profileDisplayTitle.textContent = userProfile.title;
-    sidebarUserName.textContent = userProfile.name;
-    userNameInput.value = userProfile.name;
-    userTitleInput.value = userProfile.title;
+    if (profileDisplayName) profileDisplayName.textContent = userProfile.name;
+    if (profileDisplayTitle) profileDisplayTitle.textContent = userProfile.title;
+    if (sidebarUserName) sidebarUserName.textContent = userProfile.name;
+    if (userNameInput) userNameInput.value = userProfile.name;
+    if (userTitleInput) userTitleInput.value = userProfile.title;
 
     if (userProfile.avatar) {
-        profileAvatar.src = userProfile.avatar;
-        sidebarAvatar.src = userProfile.avatar;
+        if (profileAvatar) profileAvatar.src = userProfile.avatar;
+        if (sidebarAvatar) sidebarAvatar.src = userProfile.avatar;
     }
 }
 
-saveProfileBtn.addEventListener('click', () => {
-    userProfile.name = userNameInput.value.trim() || 'علي المهدي';
-    userProfile.title = userTitleInput.value.trim() || 'عضو منجز';
+if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', () => {
+        userProfile.name = userNameInput.value.trim() || 'مستخدم جديد';
+        userProfile.title = userTitleInput.value.trim() || 'عضو منجز';
 
-    localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
-    loadProfile();
-    alert('تم حفظ البيانات الشخصية بنجاح! ✨');
-});
+        localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
+        loadProfile();
+        alert('تم حفظ البيانات الشخصية بنجاح! ✨');
+    });
+}
 
-avatarUpload.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            userProfile.avatar = event.target.result;
-            localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
-            loadProfile();
-        };
-        reader.readAsDataURL(file);
-    }
-});
+if (avatarUpload) {
+    avatarUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                userProfile.avatar = event.target.result;
+                localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
+                loadProfile();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
 
 // 7. الرسوم البيانية الإحصائية
 let weeklyChartInstance, statusChartInstance;
@@ -397,7 +408,7 @@ function renderCharts() {
             labels: ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
             datasets: [{
                 label: 'المهام المنجزة',
-                data: [5, 7, 8, 6, 9, 4, 8],
+                data: [0, 0, 0, 0, 0, 0, 0],
                 backgroundColor: '#6366f1',
                 borderRadius: 8
             }]
@@ -413,7 +424,7 @@ function renderCharts() {
         data: {
             labels: ['مكتملة', 'قيد الانتظار'],
             datasets: [{
-                data: [completedCount || 1, pendingCount],
+                data: [completedCount, pendingCount],
                 backgroundColor: ['#10b981', '#f59e0b']
             }]
         },
