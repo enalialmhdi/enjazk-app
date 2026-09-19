@@ -30,6 +30,8 @@ body {
 .app-layout {
     display: flex;
     min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 /* القائمة الجانبية Sidebar */
@@ -42,6 +44,8 @@ body {
     flex-direction: column;
     justify-content: space-between;
     transition: all 0.3s ease;
+    flex-shrink: 0;
+    z-index: 100;
 }
 
 .brand {
@@ -118,6 +122,7 @@ body {
     flex: 1;
     padding: 32px;
     overflow-y: auto;
+    width: 100%;
 }
 
 .top-header {
@@ -125,14 +130,19 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 32px;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .mobile-toggle {
     display: none;
-    background: none;
-    border: none;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    border-radius: var(--radius-md);
     font-size: 28px;
     cursor: pointer;
+    color: var(--primary-color);
 }
 
 .header-title h1 {
@@ -169,6 +179,8 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .card-header h2 {
@@ -195,7 +207,7 @@ body {
 /* إحصائيات علوية */
 .stats-overview {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
 }
@@ -221,7 +233,7 @@ body {
 
 .grid-2col {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
 }
 
@@ -230,10 +242,12 @@ body {
     display: flex;
     gap: 12px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
 .task-input-group input, .form-group input {
     flex: 1;
+    min-width: 200px;
     padding: 12px 16px;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -262,6 +276,7 @@ body {
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.2s;
+    word-break: break-word;
 }
 
 .task-list li:hover {
@@ -283,6 +298,7 @@ body {
     align-items: center;
     gap: 4px;
     font-size: 14px;
+    flex-shrink: 0;
 }
 
 .quick-notes-textarea {
@@ -309,6 +325,7 @@ body {
     justify-content: center;
     gap: 10px;
     margin: 20px 0;
+    flex-wrap: wrap;
 }
 
 .mode-btn {
@@ -368,6 +385,7 @@ body {
     justify-content: center;
     gap: 12px;
     margin-top: 24px;
+    flex-wrap: wrap;
 }
 
 /* التحديات */
@@ -390,6 +408,8 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .challenge-title-group {
@@ -421,12 +441,13 @@ body {
 }
 
 .day-btn {
-    padding: 8px;
+    padding: 8px 4px;
     border: 1px solid var(--border-color);
     background: #f8fafc;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px;
+    text-align: center;
 }
 
 .day-btn.completed {
@@ -498,6 +519,7 @@ body {
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .btn-primary { background: var(--primary-color); color: white; }
@@ -512,14 +534,90 @@ body {
 .btn-lg { padding: 12px 24px; font-size: 16px; }
 .full-width { width: 100%; }
 
-.chart-container { position: relative; height: 260px; }
+.chart-container { 
+    position: relative; 
+    height: 260px; 
+    width: 100%;
+}
 
-/* Responsive الشاشات الصغيرة */
+/* ===========================
+   تعديلات التجاوب (Responsive)
+   =========================== */
+
+/* الأجهزة اللوحية (Tablets) وشاشات الوسط */
+@media (max-width: 1024px) {
+    .days-grid {
+        grid-template-columns: repeat(7, 1fr);
+    }
+}
+
+/* الهواتف الذكية (Mobiles) */
 @media (max-width: 768px) {
-    .app-layout { flex-direction: column; }
-    .sidebar { width: 100%; display: none; }
-    .sidebar.active { display: flex; }
-    .mobile-toggle { display: block; }
-    .grid-2col { grid-template-columns: 1fr; }
-    .days-grid { grid-template-columns: repeat(4, 1fr); }
+    .app-layout {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        display: none;
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100vh;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    }
+    
+    .sidebar.active {
+        display: flex;
+    }
+
+    .main-content {
+        padding: 16px;
+    }
+
+    .mobile-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .grid-2col {
+        grid-template-columns: 1fr;
+    }
+
+    .days-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stats-overview {
+        grid-template-columns: 1fr;
+    }
+    
+    .timer-circle-container {
+        width: 200px;
+        height: 200px;
+    }
+    
+    .timer-time {
+        font-size: 34px;
+    }
+}
+
+@media (max-width: 480px) {
+    .days-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .top-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .quick-actions {
+        width: 100%;
+    }
+    
+    .quick-actions button {
+        width: 100%;
+    }
 }
