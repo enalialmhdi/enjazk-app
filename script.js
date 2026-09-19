@@ -1,8 +1,8 @@
-// 1. تسجيل الـ Service Worker ونظام إشعارات الهاتف المنبثقة
+// 1. تسجيل الـ Service Worker والإشعارات
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
-        .then(reg => console.log('Service Worker Registered Successfully!', reg))
-        .catch(err => console.log('Service Worker Registration Error:', err));
+        .then(reg => console.log('Service Worker Registered!', reg))
+        .catch(err => console.log('Service Worker Error:', err));
 }
 
 const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
@@ -12,100 +12,95 @@ function playAudioAlert() {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        
         osc.type = 'sine';
         osc.frequency.setValueAtTime(587.33, ctx.currentTime);
         osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-        
         gain.gain.setValueAtTime(0.1, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-        
         osc.connect(gain);
         gain.connect(ctx.destination);
-        
         osc.start();
         osc.stop(ctx.currentTime + 0.6);
-    } catch (e) {
-        console.log('Audio Context error:', e);
-    }
+    } catch (e) {}
 }
 
 async function sendNotification(title, options = {}) {
     playAudioAlert();
-
     if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         try {
             const reg = await navigator.serviceWorker.ready;
             reg.showNotification(title, {
                 body: options.body || '',
                 icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                badge: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                vibrate: [200, 100, 200],
-                tag: 'enjazk-notification'
+                vibrate: [200, 100, 200]
             });
-        } catch (e) {
-            new Notification(title, options);
-        }
+        } catch (e) { new Notification(title, options); }
     } else if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(title, options);
     }
 }
 
-async function requestNotificationPermission() {
-    if (!('Notification' in window)) {
-        alert('المتصفح أو النظام الحالي لا يدعم إشعارات النظام.');
-        return;
-    }
-
-    try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', {
-                body: 'عد إلينا يا بطل وتابع تقدمك في إنجاز مهامك اليومية!'
-            });
-            if (enableNotificationsBtn) enableNotificationsBtn.style.display = 'none';
-        } else {
-            alert('تم رفض صلاحية الإشعارات. يرجى تفعيلها من إعدادات المتصفح/الهاتف.');
-        }
-    } catch (err) {
-        Notification.requestPermission(function (permission) {
-            if (permission === 'granted') {
-                sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', {
-                    body: 'عد إلينا يا بطل وتابع تقدمك في إنجاز مهامك اليومية!'
-                });
-                if (enableNotificationsBtn) enableNotificationsBtn.style.display = 'none';
-            }
-        });
-    }
-}
-
 if (enableNotificationsBtn) {
-    enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
+    enableNotificationsBtn.addEventListener('click', async () => {
+        if (!('Notification' in window)) return alert('المتصفح لا يدعم الإشعارات');
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+            sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', { body: 'سنساعدك على تتبع إنجازاتك اليومية' });
+            enableNotificationsBtn.style.display = 'none';
+        }
+    });
     if ('Notification' in window && Notification.permission === 'granted') {
         enableNotificationsBtn.style.display = 'none';
     }
 }
 
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && Notification.permission === 'granted') {
-        setTimeout(() => {
-            sendNotification('عد إلينا يا بطل! 🚀', {
-                body: 'لا تنسَ متابعة تقدمك وإكمال بقية مهامك اليوم.'
-            });
-        }, 30000);
-    }
-});
+// 2. إدارة الثيم (المظهر الداكن والفاتح)
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+const themeIcon = document.getElementById('themeIcon');
+const themeText = document.getElementById('themeText');
 
-// 2. التنقل والقائمة الجانبية
+function setTheme(isDark) {
+    if (isDark) {
+        document.body.classList.add('dark-theme');
+        document.body.classList.remove('light-theme');
+        if (themeIcon) themeIcon.textContent = 'light_mode';
+        if (themeText) themeText.textContent = 'الوضع الفاتح';
+        localStorage.setItem('theme_preference', 'dark');
+    } else {
+        document.body.classList.add('light-theme');
+        document.body.classList.remove('dark-theme');
+        if (themeIcon) themeIcon.textContent = 'dark_mode';
+        if (themeText) themeText.textContent = 'الوضع المظلم';
+        localStorage.setItem('theme_preference', 'light');
+    }
+    renderCharts();
+}
+
+const savedTheme = localStorage.getItem('theme_preference') || 'dark';
+setTheme(savedTheme === 'dark');
+
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        const isDark = document.body.classList.contains('dark-theme');
+        setTheme(!isDark);
+    });
+}
+if (mobileThemeToggle) {
+    mobileThemeToggle.addEventListener('click', () => {
+        const isDark = document.body.classList.contains('dark-theme');
+        setTheme(!isDark);
+    });
+}
+
+// 3. التنقل والقائمة الجانبية
 const navBtns = document.querySelectorAll('.nav-btn');
 const appPages = document.querySelectorAll('.app-page');
 const mobileToggle = document.getElementById('mobileNavToggle');
 const navMenu = document.querySelector('.nav-menu');
 
 if (mobileToggle) {
-    mobileToggle.addEventListener('click', () => {
-        navMenu.classList.toggle('active');
-    });
+    mobileToggle.addEventListener('click', () => navMenu.classList.toggle('active'));
 }
 
 navBtns.forEach(btn => {
@@ -122,19 +117,14 @@ navBtns.forEach(btn => {
 
         if (navMenu) navMenu.classList.remove('active');
 
-        if (targetPage === 'stats-page') {
-            renderCharts();
-        }
+        if (targetPage === 'stats-page') renderCharts();
     });
 });
 
-// 3. إدارة التواريخ والمهام اليومية والأرشيف
+// 4. إدارة التواريخ والمهام اليومية
 function getFormattedDate(dateObj) {
     const d = new Date(dateObj);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 let selectedDate = getFormattedDate(new Date());
@@ -153,12 +143,7 @@ const currentSelectedDateText = document.getElementById('currentSelectedDateText
 const hiddenDatePicker = document.getElementById('hiddenDatePicker');
 const datePickerTrigger = document.getElementById('datePickerTrigger');
 
-// جلب المهام المبوّبة بالتاريخ من LocalStorage مع تحويل النظام القديم إذا وجد
 let allTasksByDate = JSON.parse(localStorage.getItem('my_habits_by_date')) || {};
-const oldTasks = JSON.parse(localStorage.getItem('my_habits'));
-if (oldTasks && oldTasks.length > 0 && !allTasksByDate[selectedDate]) {
-    allTasksByDate[selectedDate] = oldTasks;
-}
 
 function saveTasks() {
     localStorage.setItem('my_habits_by_date', JSON.stringify(allTasksByDate));
@@ -174,7 +159,6 @@ function changeDate(daysOffset) {
 
 function updateUI() {
     const todayStr = getFormattedDate(new Date());
-    
     if (selectedDate === todayStr) {
         currentSelectedDateText.textContent = `اليوم (${selectedDate})`;
     } else {
@@ -184,7 +168,6 @@ function updateUI() {
     if (hiddenDatePicker) hiddenDatePicker.value = selectedDate;
 
     const tasks = allTasksByDate[selectedDate] || [];
-
     taskList.innerHTML = '';
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.completed).length;
@@ -200,7 +183,7 @@ function updateUI() {
     if (tasks.length === 0) {
         const emptyLi = document.createElement('li');
         emptyLi.style.justifyContent = 'center';
-        emptyLi.style.color = '#9ca3af';
+        emptyLi.style.color = 'var(--text-muted)';
         emptyLi.textContent = 'لا توجد مهام مسجلة لهذا التاريخ.';
         taskList.appendChild(emptyLi);
     } else {
@@ -212,27 +195,18 @@ function updateUI() {
             span.textContent = task.text;
 
             const delBtn = document.createElement('button');
-            delBtn.className = 'delete-task-btn';
+            delBtn.className = 'icon-btn delete-btn';
             delBtn.innerHTML = `<span class="material-symbols-rounded">delete</span>`;
 
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 allTasksByDate[selectedDate].splice(index, 1);
-                if (allTasksByDate[selectedDate].length === 0) {
-                    delete allTasksByDate[selectedDate];
-                }
+                if (allTasksByDate[selectedDate].length === 0) delete allTasksByDate[selectedDate];
                 saveTasks();
             });
 
             li.addEventListener('click', () => {
                 allTasksByDate[selectedDate][index].completed = !allTasksByDate[selectedDate][index].completed;
-                
-                if (allTasksByDate[selectedDate][index].completed) {
-                    sendNotification('أحسنت! 👏', {
-                        body: `أنجزت المهمة: "${task.text}"`
-                    });
-                }
-                
                 saveTasks();
             });
 
@@ -243,7 +217,6 @@ function updateUI() {
     }
 }
 
-// أحداث التنقل واختيار التواريخ
 if (prevDayBtn) prevDayBtn.addEventListener('click', () => changeDate(-1));
 if (nextDayBtn) nextDayBtn.addEventListener('click', () => changeDate(1));
 if (todayBtn) todayBtn.addEventListener('click', () => {
@@ -265,27 +238,91 @@ if (addBtn) {
     addBtn.addEventListener('click', () => {
         const text = taskInput.value.trim();
         if (!text) return alert('يرجى كتابة نص المهمة أولاً');
-        
-        if (!allTasksByDate[selectedDate]) {
-            allTasksByDate[selectedDate] = [];
-        }
-
+        if (!allTasksByDate[selectedDate]) allTasksByDate[selectedDate] = [];
         allTasksByDate[selectedDate].push({ text, completed: false });
         taskInput.value = '';
         saveTasks();
     });
 }
 
-// 4. الملاحظات السريعة
-const quickNotes = document.getElementById('quickNotes');
-if (quickNotes) {
-    quickNotes.value = localStorage.getItem('my_quick_notes') || '';
-    quickNotes.addEventListener('input', () => {
-        localStorage.setItem('my_quick_notes', quickNotes.value);
+// 5. تطوير الملاحظات السريعة (نظام الكروت)
+let notesList = JSON.parse(localStorage.getItem('my_advanced_notes')) || [
+    { id: 1, title: 'أفكار لمشروع جديد', content: 'البدء بتصميم واجهة المستخدم واختبار تجربة الاستخدام.' }
+];
+
+const noteTitleInput = document.getElementById('noteTitleInput');
+const noteContentInput = document.getElementById('noteContentInput');
+const addNoteBtn = document.getElementById('addNoteBtn');
+const notesGrid = document.getElementById('notesGrid');
+
+function saveNotes() {
+    localStorage.setItem('my_advanced_notes', JSON.stringify(notesList));
+    renderNotes();
+}
+
+function renderNotes() {
+    if (!notesGrid) return;
+    notesGrid.innerHTML = '';
+
+    if (notesList.length === 0) {
+        notesGrid.innerHTML = `<p style="color:var(--text-muted); grid-column: 1/-1; text-align:center;">لا توجد ملاحظات محفوظة حالياً.</p>`;
+        return;
+    }
+
+    notesList.forEach((note, index) => {
+        const card = document.createElement('div');
+        card.className = 'note-card';
+        card.innerHTML = `
+            <div class="note-header">
+                <h4>${note.title}</h4>
+                <div class="note-actions">
+                    <button class="icon-btn edit-btn" onclick="editNote(${index})" title="تعديل">
+                        <span class="material-symbols-rounded">edit</span>
+                    </button>
+                    <button class="icon-btn delete-btn" onclick="deleteNote(${index})" title="حذف">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                </div>
+            </div>
+            <p class="note-body">${note.content}</p>
+        `;
+        notesGrid.appendChild(card);
     });
 }
 
-// 5. مؤقت بومودورو
+if (addNoteBtn) {
+    addNoteBtn.addEventListener('click', () => {
+        const title = noteTitleInput.value.trim() || 'بدون عنوان';
+        const content = noteContentInput.value.trim();
+        if (!content) return alert('يرجى كتابة محتوى الملاحظة');
+
+        notesList.unshift({ id: Date.now(), title, content });
+        noteTitleInput.value = '';
+        noteContentInput.value = '';
+        saveNotes();
+    });
+}
+
+window.deleteNote = function(index) {
+    if (confirm('هل تريد حذف هذه الملاحظة؟')) {
+        notesList.splice(index, 1);
+        saveNotes();
+    }
+};
+
+window.editNote = function(index) {
+    const note = notesList[index];
+    const newTitle = prompt('تعديل عنوان الملاحظة:', note.title);
+    if (newTitle === null) return;
+    const newContent = prompt('تعديل محتوى الملاحظة:', note.content);
+    if (newContent === null) return;
+
+    notesList[index].title = newTitle.trim() || 'بدون عنوان';
+    notesList[index].content = newContent.trim();
+    saveNotes();
+};
+
+// 6. مؤقت بومودورو
 let timerInterval;
 let totalTime = 25 * 60;
 let timeLeft = 25 * 60;
@@ -312,8 +349,7 @@ modeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         modeBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const minutes = parseInt(btn.getAttribute('data-time'));
-        totalTime = minutes * 60;
+        totalTime = parseInt(btn.getAttribute('data-time')) * 60;
         timeLeft = totalTime;
         clearInterval(timerInterval);
         timerInterval = null;
@@ -321,7 +357,7 @@ modeBtns.forEach(btn => {
     });
 });
 
-function startTimer() {
+if (startTimerBtn) startTimerBtn.addEventListener('click', () => {
     if (timerInterval) return;
     timerInterval = setInterval(() => {
         if (timeLeft > 0) {
@@ -330,18 +366,16 @@ function startTimer() {
         } else {
             clearInterval(timerInterval);
             timerInterval = null;
-            sendNotification('انتهت جلسة التركيز! 🎉', {
-                body: 'حان وقت الاستراحة أو الانتقال للمهمة التالية.'
-            });
+            sendNotification('انتهت جلسة التركيز! 🎉', { body: 'حان وقت الاستراحة أو الانتقال للمهمة التالية.' });
         }
     }, 1000);
-}
+});
 
-if (startTimerBtn) startTimerBtn.addEventListener('click', startTimer);
 if (pauseTimerBtn) pauseTimerBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
     timerInterval = null;
 });
+
 if (resetTimerBtn) resetTimerBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
     timerInterval = null;
@@ -349,9 +383,9 @@ if (resetTimerBtn) resetTimerBtn.addEventListener('click', () => {
     updateTimer();
 });
 
-// 6. التحديات اليومية
+// 7. التحديات اليومية (مع إمكانية التعديل وتحسين الحذف)
 let challenges = JSON.parse(localStorage.getItem('my_challenges')) || [
-    { id: 1, title: 'تحدي 21 يوم قراءة وتركيز', days: [true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false] }
+    { id: 1, title: 'تحدي 21 يوم قراءة وتركيز', days: new Array(21).fill(false) }
 ];
 
 const challengesContainer = document.getElementById('challengesContainer');
@@ -381,11 +415,16 @@ function renderChallenges() {
             <div class="challenge-header">
                 <div class="challenge-title-group">
                     <span class="challenge-title">${ch.title}</span>
-                    <span style="font-weight:bold; color:#10b981;">(${progressPercent}%)</span>
+                    <span class="challenge-percent">(${progressPercent}%)</span>
                 </div>
-                <button class="delete-challenge-btn" onclick="deleteChallenge(${chIndex})">
-                    <span class="material-symbols-rounded">delete</span> حذف
-                </button>
+                <div class="challenge-actions">
+                    <button class="icon-btn edit-btn" onclick="editChallengeTitle(${chIndex})" title="تعديل العنوان">
+                        <span class="material-symbols-rounded">edit</span>
+                    </button>
+                    <button class="icon-btn delete-btn" onclick="deleteChallenge(${chIndex})" title="حذف التحدي">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>
+                </div>
             </div>
             <div class="challenge-progress-bar">
                 <div class="challenge-progress-fill" style="width: ${progressPercent}%"></div>
@@ -393,7 +432,7 @@ function renderChallenges() {
             <div class="days-grid">
                 ${ch.days.map((done, dIndex) => `
                     <button class="day-btn ${done ? 'completed' : ''}" onclick="toggleDay(${chIndex},${dIndex})">
-                        يوم ${dIndex + 1}
+                        ${dIndex + 1}
                     </button>
                 `).join('')}
             </div>
@@ -407,6 +446,14 @@ window.toggleDay = function(chIndex, dIndex) {
     saveChallenges();
 };
 
+window.editChallengeTitle = function(chIndex) {
+    const newTitle = prompt('تعديل اسم التحدي:', challenges[chIndex].title);
+    if (newTitle !== null && newTitle.trim() !== '') {
+        challenges[chIndex].title = newTitle.trim();
+        saveChallenges();
+    }
+};
+
 window.deleteChallenge = function(chIndex) {
     if (confirm('هل أنت متأكد من رغبتك في حذف هذا التحدي؟')) {
         challenges.splice(chIndex, 1);
@@ -418,17 +465,13 @@ if (createChallengeBtn) {
     createChallengeBtn.addEventListener('click', () => {
         const title = newChallengeInput.value.trim();
         if (!title) return alert('أدخل عنوان التحدي');
-        challenges.push({
-            id: Date.now(),
-            title: title,
-            days: new Array(21).fill(false)
-        });
+        challenges.push({ id: Date.now(), title, days: new Array(21).fill(false) });
         newChallengeInput.value = '';
         saveChallenges();
     });
 }
 
-// 7. إدارة الملف الشخصي
+// 8. الملف الشخصي
 const profileDisplayName = document.getElementById('profileDisplayName');
 const profileDisplayTitle = document.getElementById('profileDisplayTitle');
 const sidebarUserName = document.getElementById('sidebarUserName');
@@ -451,7 +494,6 @@ function loadProfile() {
     if (sidebarUserName) sidebarUserName.textContent = userProfile.name;
     if (userNameInput) userNameInput.value = userProfile.name;
     if (userTitleInput) userTitleInput.value = userProfile.title;
-
     if (userProfile.avatar) {
         if (profileAvatar) profileAvatar.src = userProfile.avatar;
         if (sidebarAvatar) sidebarAvatar.src = userProfile.avatar;
@@ -462,7 +504,6 @@ if (saveProfileBtn) {
     saveProfileBtn.addEventListener('click', () => {
         userProfile.name = userNameInput.value.trim() || 'علي المهدي';
         userProfile.title = userTitleInput.value.trim() || 'عضو منجز';
-
         localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
         loadProfile();
         alert('تم حفظ البيانات الشخصية بنجاح! ✨');
@@ -474,7 +515,7 @@ if (avatarUpload) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(event) {
+            reader.onload = (event) => {
                 userProfile.avatar = event.target.result;
                 localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
                 loadProfile();
@@ -484,19 +525,20 @@ if (avatarUpload) {
     });
 }
 
-// 8. الرسوم البيانية والإحصائيات الأسبوعية والشهرية
+// 9. الإحصائيات ورسومات Chart.js
 let weeklyChartInstance, statusChartInstance;
 
 function renderCharts() {
     const weeklyCtx = document.getElementById('weeklyChart')?.getContext('2d');
     const statusCtx = document.getElementById('statusChart')?.getContext('2d');
-
     if (!weeklyCtx || !statusCtx) return;
 
     if (weeklyChartInstance) weeklyChartInstance.destroy();
     if (statusChartInstance) statusChartInstance.destroy();
 
-    // إحصائيات آخر 7 أيام
+    const isDark = document.body.classList.contains('dark-theme');
+    const textColor = isDark ? '#f8fafc' : '#1e293b';
+
     const last7DaysLabels = [];
     const last7DaysData = [];
 
@@ -504,12 +546,9 @@ function renderCharts() {
         const d = new Date();
         d.setDate(d.getDate() - i);
         const dateStr = getFormattedDate(d);
-        const dayName = d.toLocaleDateString('ar-EG', { weekday: 'short' });
-        
-        last7DaysLabels.push(dayName);
+        last7DaysLabels.push(d.toLocaleDateString('ar-EG', { weekday: 'short' }));
         const dayTasks = allTasksByDate[dateStr] || [];
-        const completed = dayTasks.filter(t => t.completed).length;
-        last7DaysData.push(completed);
+        last7DaysData.push(dayTasks.filter(t => t.completed).length);
     }
 
     weeklyChartInstance = new Chart(weeklyCtx, {
@@ -520,58 +559,52 @@ function renderCharts() {
                 label: 'المهام المنجزة',
                 data: last7DaysData,
                 backgroundColor: '#6366f1',
-                borderRadius: 8
+                borderRadius: 6
             }]
         },
-        options: { 
-            responsive: true, 
+        options: {
+            responsive: true,
             maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: textColor } } },
             scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                x: { ticks: { color: textColor } },
+                y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor } }
             }
         }
     });
 
-    // إحصائيات الشهر (آخر 30 يوماً)
-    let monthlyCompleted = 0;
-    let monthlyTotal = 0;
-
+    let monthlyCompleted = 0, monthlyTotal = 0;
     for (let i = 0; i < 30; i++) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dateStr = getFormattedDate(d);
-        const dayTasks = allTasksByDate[dateStr] || [];
-        
+        const dayTasks = allTasksByDate[getFormattedDate(d)] || [];
         monthlyTotal += dayTasks.length;
         monthlyCompleted += dayTasks.filter(t => t.completed).length;
     }
 
-    const monthlyPending = monthlyTotal - monthlyCompleted;
-
     statusChartInstance = new Chart(statusCtx, {
         type: 'doughnut',
         data: {
-            labels: ['مكتملة هذا الشهر', 'غير مكتملة'],
+            labels: ['مكتملة', 'غير مكتملة'],
             datasets: [{
-                data: [monthlyCompleted, monthlyPending],
+                data: [monthlyCompleted, monthlyTotal - monthlyCompleted],
                 backgroundColor: ['#10b981', '#ef4444']
             }]
         },
-        options: { 
-            responsive: true, 
+        options: {
+            responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                title: {
-                    display: true,
-                    text: `إجمالي الإنجاز الشهري (${monthlyCompleted} من ${monthlyTotal} مهمة)`
-                }
+                legend: { labels: { color: textColor } },
+                title: { display: true, text: `الإنجاز الشهري (${monthlyCompleted} من ${monthlyTotal})`, color: textColor }
             }
         }
     });
 }
 
-// التشغيل الابتدائي
+// التشغيل الأولي
 loadProfile();
 updateUI();
 updateTimer();
 renderChallenges();
+renderNotes();
