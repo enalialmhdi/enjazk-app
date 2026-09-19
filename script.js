@@ -1,4 +1,10 @@
-// 1. نظام الإشعارات والتنبيهات الصوتية
+// 1. تسجيل الـ Service Worker ونظام إشعارات الهاتف المنبثقة
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(reg => console.log('Service Worker Registered Successfully!', reg))
+        .catch(err => console.log('Service Worker Registration Error:', err));
+}
+
 const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
 
 function playAudioAlert() {
@@ -24,14 +30,25 @@ function playAudioAlert() {
     }
 }
 
-function sendNotification(title, options) {
+async function sendNotification(title, options = {}) {
     playAudioAlert();
-    if ('Notification' in window && Notification.permission === 'granted') {
+
+    // إرسال الإشعار عبر Service Worker ليظهر في أعلى الشاشة وشاشة القفل
+    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         try {
-            new Notification(title, options);
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification(title, {
+                body: options.body || '',
+                icon: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+                badge: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+                vibrate: [200, 100, 200],
+                tag: 'enjazk-notification'
+            });
         } catch (e) {
-            console.log('Notification error:', e);
+            new Notification(title, options);
         }
+    } else if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, options);
     }
 }
 
@@ -45,18 +62,17 @@ async function requestNotificationPermission() {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
             sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', {
-                body: 'ستتلقى تنبيهات مباشرة عند اكتمال جلسات البومودورو والمهام.'
+                body: 'عد إلينا يا بطل وتابع تقدمك في إنجاز مهامك اليومية!'
             });
             if (enableNotificationsBtn) enableNotificationsBtn.style.display = 'none';
         } else {
-            alert('تم رفض صلاحية الإشعارات من إعدادات المتصفح/الهاتف.');
+            alert('تم رفض صلاحية الإشعارات. يرجى تفعيلها من إعدادات المتصفح/الهاتف.');
         }
     } catch (err) {
-        // دعم المتصفحات القديمة التي تستخدم Callback بدلاً من Promise
         Notification.requestPermission(function (permission) {
             if (permission === 'granted') {
                 sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', {
-                    body: 'ستتلقى تنبيهات مباشرة عند اكتمال جلسات البومودورو والمهام.'
+                    body: 'عد إلينا يا بطل وتابع تقدمك في إنجاز مهامك اليومية!'
                 });
                 if (enableNotificationsBtn) enableNotificationsBtn.style.display = 'none';
             }
@@ -66,11 +82,21 @@ async function requestNotificationPermission() {
 
 if (enableNotificationsBtn) {
     enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
-
     if ('Notification' in window && Notification.permission === 'granted') {
         enableNotificationsBtn.style.display = 'none';
     }
 }
+
+// تذكير تلقائي ينبثق أعلى الهاتف عند الخروج من التطبيق
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && Notification.permission === 'granted') {
+        setTimeout(() => {
+            sendNotification('عد إلينا يا بطل! 🚀', {
+                body: 'لا تنسَ متابعة تقدمك وإكمال بقية مهامك اليوم.'
+            });
+        }, 30000); // يرسل الإشعار بعد 30 ثانية من مغادرة التطبيق
+    }
+});
 
 // 2. التنقل والقائمة الجانبية
 const navBtns = document.querySelectorAll('.nav-btn');
@@ -156,7 +182,6 @@ function updateUI() {
             saveTasks();
         });
 
-        // تم إصلاح حدث النقر لحفظ حالة الإنجاز وإرسال الإشعار
         li.addEventListener('click', () => {
             tasks[index].completed = !tasks[index].completed;
             
