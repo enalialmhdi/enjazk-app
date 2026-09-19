@@ -11,25 +11,431 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Style CSS -->
-<link rel="stylesheet" href="style.css">
+    <!-- أكواد التنسيق المدمجة مباشرة لضمان ظهور التصميم كاملاً -->
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --sidebar-width: 260px;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .mobile-nav-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            background: var(--primary-color);
+            color: #fff;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--surface-color);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+        }
+
+        .user-profile-summary {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: var(--bg-color);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+        }
+
+        .avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            background: #e0e7ff;
+            color: var(--primary-color);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 500;
+            text-align: right;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background-color: #e0e7ff;
+            color: var(--primary-color);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .app-page {
+            display: none;
+        }
+
+        .app-page.active {
+            display: block;
+        }
+
+        .page-header {
+            margin-bottom: 25px;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+        }
+
+        .card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .action-btn:hover { background: var(--primary-hover); }
+        .action-btn.secondary { background: #f1f5f9; color: var(--text-color); }
+        .action-btn.outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
+
+        .task-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .task-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .task-list li.completed span {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .delete-task-btn {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+        }
+
+        .pomodoro-container {
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .pomodoro-modes {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .timer-circle-display {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+        }
+
+        .timer-svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .timer-circle-bg {
+            fill: none;
+            stroke: var(--border-color);
+            stroke-width: 6;
+        }
+
+        .timer-circle-progress {
+            fill: none;
+            stroke: var(--primary-color);
+            stroke-width: 6;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        .timer-time {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .challenge-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 15px;
+        }
+
+        .challenge-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .day-btn {
+            padding: 8px 0;
+            font-size: 0.75rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .day-btn.completed {
+            background: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .stats-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            background: #e0e7ff;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-container {
+            height: 250px;
+            position: relative;
+        }
+
+        .avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .profile-header-view {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav-toggle { display: block; }
+            .sidebar {
+                position: fixed;
+                right: -100%;
+                z-index: 999;
+                transition: right 0.3s ease;
+            }
+            .sidebar.active { right: 0; }
+            .main-content { padding: 60px 15px 15px; }
+        }
+    </style>
 </head>
 <body>
 
-    <!-- زر فتح القائمة الجانبية للشاشات الصغيرة -->
     <button class="mobile-nav-toggle" id="mobileNavToggle">
         <span class="material-symbols-rounded">menu</span>
     </button>
 
     <div class="app-container">
-        <!-- القائمة الجانبية Navigation Sidebar -->
         <aside class="sidebar">
             <div class="brand">
                 <span class="material-symbols-rounded brand-icon">task_alt</span>
                 <h2>إنجازك</h2>
             </div>
             
-            <!-- الملف الشخصي البسيط في الهيدر -->
             <div class="user-profile-summary">
                 <img id="sidebarAvatar" src="https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff" alt="الرمز الشخصي" class="avatar-small">
                 <div class="user-info-text">
@@ -69,10 +475,9 @@
             </div>
         </aside>
 
-        <!-- المحتوى الرئيسي للمشروع Main Content -->
         <main class="main-content">
             
-            <!-- 1. صفحة المهام والعادات اليومية -->
+            <!-- 1. صفحة المهام -->
             <section id="tasks-page" class="app-page active">
                 <header class="page-header">
                     <h1>متابعة المهام والعادات</h1>
@@ -107,9 +512,7 @@
                         <h3>قائمة العادات والمهام اليومية</h3>
                         <span class="task-count-badge"><span id="taskCount">0</span> مهام</span>
                     </div>
-                    <ul id="taskList" class="task-list">
-                        <!-- تُضاف المهام هنا ديناميكياً بواسطة JavaScript -->
-                    </ul>
+                    <ul id="taskList" class="task-list"></ul>
                 </div>
 
                 <div class="card notes-card">
@@ -118,7 +521,7 @@
                 </div>
             </section>
 
-            <!-- 2. صفحة مؤقت بومودورو Pomodoro Timer -->
+            <!-- 2. صفحة بومودورو -->
             <section id="pomodoro-page" class="app-page">
                 <header class="page-header">
                     <h1>مؤقت بومودورو للتركيز</h1>
@@ -157,7 +560,7 @@
                 </div>
             </section>
 
-            <!-- 3. صفحة تحدي 21 يوم -->
+            <!-- 3. صفحة التحديات -->
             <section id="challenges-page" class="app-page">
                 <header class="page-header">
                     <h1>تحدي 21 يومًا لبناء العادات</h1>
@@ -167,7 +570,7 @@
                 <div class="card add-challenge-card">
                     <h3>بدء تحدي جديد</h3>
                     <div class="input-group">
-                        <input type="text" id="newChallengeInput" placeholder="ما هي العادة التي تريد الالتزام بها (مثال: الاستيقاظ 6 صباحاً)؟">
+                        <input type="text" id="newChallengeInput" placeholder="ما هي العادة التي تريد الالتزام بها؟">
                         <button id="createChallengeBtn" class="action-btn">
                             <span class="material-symbols-rounded">flag</span>
                             <span>إنشاء التحدي</span>
@@ -175,16 +578,14 @@
                     </div>
                 </div>
 
-                <div id="challengesContainer" class="challenges-grid">
-                    <!-- تُضاف التحديات ديناميكياً بواسطة JavaScript -->
-                </div>
+                <div id="challengesContainer" class="challenges-grid"></div>
             </section>
 
-            <!-- 4. صفحة الإحصائيات Stats -->
+            <!-- 4. صفحة الإحصائيات -->
             <section id="stats-page" class="app-page">
                 <header class="page-header">
                     <h1>الإحصائيات والتحليل</h1>
-                    <p>نظرة عامة على أدائك ومدى التزامك خلال الفترة الماضية</p>
+                    <p>نظرة عامة على أدائك ومدى التزامك</p>
                 </header>
 
                 <div class="stats-summary-grid">
@@ -193,13 +594,6 @@
                         <div class="stat-info">
                             <h4 id="statCompletedCount">0</h4>
                             <p>مهام منجزة اليوم</p>
-                        </div>
-                    </div>
-                    <div class="card stat-box">
-                        <span class="material-symbols-rounded stat-icon">local_fire_department</span>
-                        <div class="stat-info">
-                            <h4 id="statStreak">0 أيام</h4>
-                            <p>أطول سلسلة التزام</p>
                         </div>
                     </div>
                     <div class="card stat-box">
@@ -227,7 +621,7 @@
                 </div>
             </section>
 
-            <!-- 5. صفحة الملف الشخصي Profile -->
+            <!-- 5. صفحة الملف الشخصي -->
             <section id="profile-page" class="app-page">
                 <header class="page-header">
                     <h1>الملف الشخصي</h1>
@@ -238,9 +632,6 @@
                     <div class="profile-header-view">
                         <div class="avatar-container">
                             <img id="profileAvatar" src="https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff" alt="الصورة الشخصية" class="avatar-large">
-                            <label for="avatarUpload" class="avatar-edit-btn">
-                                <span class="material-symbols-rounded">photo_camera</span>
-                            </label>
                             <input type="file" id="avatarUpload" accept="image/*" style="display: none;">
                         </div>
                         <div class="profile-info-display">
@@ -249,15 +640,13 @@
                         </div>
                     </div>
 
-                    <hr class="divider">
-
                     <form id="profileForm" class="profile-form" onsubmit="return false;">
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 15px;">
                             <label for="userNameInput">الاسم الكامل</label>
                             <input type="text" id="userNameInput" placeholder="أدخل اسمك هنا">
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 15px;">
                             <label for="userTitleInput">المسمى / الهدف</label>
                             <input type="text" id="userTitleInput" placeholder="مثال: مطور، طالب، رائد أعمال">
                         </div>
