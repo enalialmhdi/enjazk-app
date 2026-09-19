@@ -153,8 +153,12 @@ const currentSelectedDateText = document.getElementById('currentSelectedDateText
 const hiddenDatePicker = document.getElementById('hiddenDatePicker');
 const datePickerTrigger = document.getElementById('datePickerTrigger');
 
-// جلب المهام المبوّبة بالتاريخ من LocalStorage
+// جلب المهام المبوّبة بالتاريخ من LocalStorage مع تحويل النظام القديم إذا وجد
 let allTasksByDate = JSON.parse(localStorage.getItem('my_habits_by_date')) || {};
+const oldTasks = JSON.parse(localStorage.getItem('my_habits'));
+if (oldTasks && oldTasks.length > 0 && !allTasksByDate[selectedDate]) {
+    allTasksByDate[selectedDate] = oldTasks;
+}
 
 function saveTasks() {
     localStorage.setItem('my_habits_by_date', JSON.stringify(allTasksByDate));
