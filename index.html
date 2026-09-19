@@ -3,181 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم البرمجية</title>
-    
-    <!-- خط Tajawal -->
+    <title>إنجازك - منصة الإنتاجية والعادات</title>
+    <!-- Google Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    
-    <!-- FontAwesome للأيقونات -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- مكتبة Chart.js -->
-    <script src="https://cdn.jsdelivr.net/stylesheet/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div class="app-container">
-        <!-- القائمة الجانبية -->
+    <div class="app-layout">
+        <!-- القائمة الجانبية (Sidebar) -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-box">
-                    <i class="fa-solid fa-code"></i>
+            <div class="brand">
+                <span class="material-symbols-rounded brand-icon">bolt</span>
+                <h2>إنجازك</h2>
+            </div>
+
+            <div class="user-profile-mini">
+                <img id="sidebarAvatar" src="https://ui-avatars.com/api/?name=Ali+Almhdi&background=4f46e5&color=fff" alt="الصورة الشخصية">
+                <div class="user-info">
+                    <h4 id="sidebarUserName">علي المهدي</h4>
+                    <span>مطور ومهندس إنتاجية</span>
                 </div>
-                <h2>منصتي</h2>
             </div>
 
             <nav class="nav-menu">
-                <button class="nav-btn active" data-page="home-page">
-                    <i class="fa-solid fa-house"></i>
-                    <span>الرئيسية</span>
+                <button class="nav-btn active" data-page="dashboard-page">
+                    <span class="material-symbols-rounded">dashboard</span>
+                    <span>لوحة التحكم</span>
                 </button>
-                <button class="nav-btn" data-page="projects-page">
-                    <i class="fa-solid fa-diagram-project"></i>
-                    <span>المشاريع</span>
+                <button class="nav-btn" data-page="pomodoro-page">
+                    <span class="material-symbols-rounded">timer</span>
+                    <span>مؤقت بومودورو</span>
+                </button>
+                <button class="nav-btn" data-page="challenges-page">
+                    <span class="material-symbols-rounded">trophy</span>
+                    <span>التحديات اليومية</span>
                 </button>
                 <button class="nav-btn" data-page="stats-page">
-                    <i class="fa-solid fa-chart-pie"></i>
-                    <span>الإحصائيات</span>
+                    <span class="material-symbols-rounded">bar_chart</span>
+                    <span>الإحصائيات والتقرير</span>
                 </button>
-                <button class="nav-btn" data-page="settings-page">
-                    <i class="fa-solid fa-gear"></i>
-                    <span>الإعدادات</span>
+                <button class="nav-btn" data-page="profile-page">
+                    <span class="material-symbols-rounded">person</span>
+                    <span>الملف الشخصي</span>
                 </button>
             </nav>
 
             <div class="sidebar-footer">
-                <div class="user-info">
-                    <div class="avatar"><i class="fa-solid fa-user"></i></div>
-                    <div class="details">
-                        <h4>المستخدم</h4>
-                        <span>مطور المظهر</span>
-                    </div>
-                </div>
+                <button id="enableNotificationsBtn" class="btn-secondary full-width">
+                    <span class="material-symbols-rounded">notifications_active</span>
+                    <span>تفعيل الإشعارات</span>
+                </button>
             </div>
         </aside>
 
-        <!-- المحتوى الرئيسي -->
+        <!-- المحتوى الرئيسي (Main Content) -->
         <main class="main-content">
-            <!-- الهيدر العلوي -->
             <header class="top-header">
-                <button class="icon-btn mobile-toggle" id="mobileNavToggle">
-                    <i class="fa-solid fa-bars"></i>
+                <button id="mobileNavToggle" class="mobile-toggle">
+                    <span class="material-symbols-rounded">menu</span>
                 </button>
-
-                <div class="search-box">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" placeholder="ابحث هنا...">
+                <div class="header-title">
+                    <h1>مرحباً بك مجدداً ✨</h1>
+                    <p>لنحقق أهدافك اليوم بكل فاعلية وتنظيم.</p>
                 </div>
-
-                <div class="header-actions">
-                    <button class="icon-btn" id="notificationsBtn">
-                        <i class="fa-regular fa-bell"></i>
-                    </button>
-                    <button class="icon-btn" id="themeToggle">
-                        <i class="fa-regular fa-moon"></i>
+                <div class="quick-actions">
+                    <button id="quickPomodoroBtn" class="btn-primary">
+                        <span class="material-symbols-rounded">play_arrow</span>
+                        <span>بدء بومودورو سريع</span>
                     </button>
                 </div>
             </header>
 
-            <!-- محتوى الصفحات -->
-            <div class="pages-wrapper">
-                
-                <!-- 1. الرئيسية -->
-                <section id="home-page" class="app-page active">
-                    <div class="page-title">
-                        <h1>مرحباً بك مجدداً 👋</h1>
-                        <p>إليك نظرة عامة على نشاط النظام اليوم.</p>
-                    </div>
-
-                    <div class="cards-grid">
-                        <div class="stat-card">
-                            <div class="card-icon blue"><i class="fa-solid fa-folder-open"></i></div>
-                            <div class="card-info">
-                                <span>إجمالي المشاريع</span>
-                                <h3>24 مشروع</h3>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="card-icon green"><i class="fa-solid fa-check-double"></i></div>
-                            <div class="card-info">
-                                <span>المكتملة</span>
-                                <h3>18 مشروع</h3>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="card-icon orange"><i class="fa-solid fa-clock"></i></div>
-                            <div class="card-info">
-                                <span>قيد التنفيذ</span>
-                                <h3>6 مشاريع</h3>
-                            </div>
+            <!-- 1. صفحة لوحة التحكم الرئيسي -->
+            <section id="dashboard-page" class="app-page active">
+                <div class="stats-overview">
+                    <div class="stat-card">
+                        <span class="material-symbols-rounded stat-icon">task_alt</span>
+                        <div class="stat-info">
+                            <h3>المهام اليومية</h3>
+                            <p><span id="taskCount">0</span> مهام إجمالية</p>
                         </div>
                     </div>
-                </section>
-
-                <!-- 2. المشاريع -->
-                <section id="projects-page" class="app-page">
-                    <div class="page-title">
-                        <h1>المشاريع</h1>
-                        <p>قائمة بكل المشاريع الحالية والسابقة.</p>
-                    </div>
-
-                    <div class="project-list">
-                        <div class="project-item">
-                            <i class="fa-solid fa-globe"></i>
-                            <div class="project-details">
-                                <h4>موقع لوحة التحكم</h4>
-                                <span>تطوير واجهة المستخدم</span>
-                            </div>
-                            <span class="status-badge green">نشط</span>
-                        </div>
-                        <div class="project-item">
-                            <i class="fa-solid fa-mobile-screen"></i>
-                            <div class="project-details">
-                                <h4>تطبيق الهاتف</h4>
-                                <span>تصميم الواجه</span>
-                            </div>
-                            <span class="status-badge orange">قيد الانتظار</span>
+                    <div class="stat-card">
+                        <span class="material-symbols-rounded stat-icon">check_circle</span>
+                        <div class="stat-info">
+                            <h3>المكتملة اليوم</h3>
+                            <p><span id="statCompletedCount">0</span> مهام بنجاح</p>
                         </div>
                     </div>
-                </section>
-
-                <!-- 3. الإحصائيات -->
-                <section id="stats-page" class="app-page">
-                    <div class="page-title">
-                        <h1>الإحصائيات والأداء</h1>
-                        <p>متابعة أداء العمل ورسم البيانات.</p>
-                    </div>
-
-                    <div class="chart-container">
-                        <canvas id="myChart"></canvas>
-                    </div>
-                </section>
-
-                <!-- 4. الإعدادات -->
-                <section id="settings-page" class="app-page">
-                    <div class="page-title">
-                        <h1>إعدادات النظام</h1>
-                        <p>تعديل تفضيلات حسابك وتصميم الواجهة.</p>
-                    </div>
-
-                    <div class="settings-box">
-                        <div class="setting-option">
-                            <label>الإشعارات البريدية</label>
-                            <input type="checkbox" checked>
-                        </div>
-                        <div class="setting-option">
-                            <label>الوضع الداكن الافتراضي</label>
-                            <input type="checkbox">
+                    <div class="stat-card">
+                        <span class="material-symbols-rounded stat-icon">local_fire_department</span>
+                        <div class="stat-info">
+                            <h3>التحديات النشطة</h3>
+                            <p><span id="statActiveChallenges">0</span> تحديات شغال عليها</p>
                         </div>
                     </div>
-                </section>
+                </div>
 
-            </div>
+                <div class="grid-2col">
+                    <!-- قسم إدارة المهام -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><span class="material-symbols-rounded">checklist</span> قائمة مهام اليوم</h2>
+                            <span id="percentageNumber" class="badge">0%</span>
+                        </div>
+                        <p id="progressText" class="progress-subtext">0 من 0 مهام مكتملة اليوم</p>
+                        
+                        <div class="task-input-group">
+                            <input type="text" id="taskInput" placeholder="أضف مهمة جديدة هنا...">
+                            <button id="addBtn" class="btn-primary">
+                                <span class="material-symbols-rounded">add</span>
+                                <span>إضافة</span>
+                            </button>
+                        </div>
+
+                        <ul id="taskList" class="task-list"></ul>
+                    </div>
+
+                    <!-- قسم الملاحظات السريعة -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><span class="material-symbols-rounded">edit_note</span> ملاحظات وأفكار سريعة</h2>
+                        </div>
+                        <p class="progress-subtext">تُحفظ أفكارك وتدويناتك تلقائياً هنا في ذاكرة متصفحك.</p>
+                        <textarea id="quickNotes" class="quick-notes-textarea" placeholder="اكتب أفكارك السريعة، ملاحظات الاجتماعات، أو الأمور المهمة..."></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. صفحة مؤقت بومودورو -->
+            <section id="pomodoro-page" class="app-page">
+                <div class="card pomodoro-card">
+                    <h2><span class="material-symbols-rounded">timer</span> مؤقت بومودورو للتركيز</h2>
+                    <p class="progress-subtext">قسم وقتك لجرعات تركيز وتوقف عن المشتتات.</p>
+
+                    <div class="pomodoro-modes">
+                        <button class="mode-btn active" data-time="25">تركيز (25 دقيقة)</button>
+                        <button class="mode-btn" data-time="5">استراحة قصيرة (5 دقائق)</button>
+                        <button class="mode-btn" data-time="15">استراحة طويلة (15 دقيقة)</button>
+                    </div>
+
+                    <div class="timer-circle-container">
+                        <svg class="timer-svg" viewBox="0 0 100 100">
+                            <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                            <circle id="timerProgress" class="timer-bar" cx="50" cy="50" r="45"></circle>
+                        </svg>
+                        <div id="timerDisplay" class="timer-time">25:00</div>
+                    </div>
+
+                    <div class="timer-controls">
+                        <button id="startTimerBtn" class="btn-primary btn-lg">
+                            <span class="material-symbols-rounded">play_arrow</span> تشغيل
+                        </button>
+                        <button id="pauseTimerBtn" class="btn-secondary btn-lg">
+                            <span class="material-symbols-rounded">pause</span> إيقاف مؤقت
+                        </button>
+                        <button id="resetTimerBtn" class="btn-danger btn-lg">
+                            <span class="material-symbols-rounded">replay</span> إعادة ضبط
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. صفحة التحديات اليومية -->
+            <section id="challenges-page" class="app-page">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><span class="material-symbols-rounded">trophy</span> تحدي الـ 21 يوماً للإنتاجية والعادات</h2>
+                    </div>
+                    <div class="task-input-group">
+                        <input type="text" id="newChallengeInput" placeholder="أدخل اسم تحدي أو عادة جديدة (مثال: قراءة 20 صفحة)...">
+                        <button id="createChallengeBtn" class="btn-primary">
+                            <span class="material-symbols-rounded">add_task</span>
+                            <span>إنشاء التحدي</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="challengesContainer" class="challenges-grid"></div>
+            </section>
+
+            <!-- 4. صفحة الإحصائيات -->
+            <section id="stats-page" class="app-page">
+                <div class="grid-2col">
+                    <div class="card">
+                        <h2><span class="material-symbols-rounded">analytics</span> إنجازات الأسبوع</h2>
+                        <div class="chart-container">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2><span class="material-symbols-rounded">pie_chart</span> حالة المهام اليومية</h2>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. صفحة الملف الشخصي -->
+            <section id="profile-page" class="app-page">
+                <div class="card profile-card">
+                    <div class="profile-header-view">
+                        <div class="avatar-container">
+                            <img id="profileAvatar" src="https://ui-avatars.com/api/?name=Ali+Almhdi&background=4f46e5&color=fff" alt="Avatar">
+                            <label for="avatarUpload" class="avatar-edit-label">
+                                <span class="material-symbols-rounded">photo_camera</span>
+                            </label>
+                            <input type="file" id="avatarUpload" accept="image/*" hidden>
+                        </div>
+                        <h2 id="profileDisplayName">علي المهدي</h2>
+                        <p id="profileDisplayTitle" class="progress-subtext">مطور ومهندس إنتاجية</p>
+                    </div>
+
+                    <div class="profile-form">
+                        <div class="form-group">
+                            <label>الاسم بالكامل</label>
+                            <input type="text" id="userNameInput" value="علي المهدي">
+                        </div>
+                        <div class="form-group">
+                            <label>المسمى الوظيفي / المجال</label>
+                            <input type="text" id="userTitleInput" value="مطور ومهندس إنتاجية">
+                        </div>
+                        <button id="saveProfileBtn" class="btn-primary">
+                            <span class="material-symbols-rounded">save</span>
+                            <span>حفظ التغييرات</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
