@@ -2,48 +2,70 @@
 const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
 
 function playAudioAlert() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-    
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-    
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    
-    osc.start();
-    osc.stop(ctx.currentTime + 0.6);
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+        
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+    } catch (e) {
+        console.log('Audio Context error:', e);
+    }
 }
 
 function sendNotification(title, options) {
     playAudioAlert();
     if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, options);
+        try {
+            new Notification(title, options);
+        } catch (e) {
+            console.log('Notification error:', e);
+        }
     }
 }
 
-if (enableNotificationsBtn) {
-    enableNotificationsBtn.addEventListener('click', () => {
-        if (!('Notification' in window)) {
-            alert('المتصفح لديك لا يدعم إشعارات النظام.');
-            return;
+async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+        alert('المتصفح أو النظام الحالي لا يدعم إشعارات النظام.');
+        return;
+    }
+
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', {
+                body: 'ستتلقى تنبيهات مباشرة عند اكتمال جلسات البومودورو والمهام.'
+            });
+            if (enableNotificationsBtn) enableNotificationsBtn.style.display = 'none';
+        } else {
+            alert('تم رفض صلاحية الإشعارات من إعدادات المتصفح/الهاتف.');
         }
-        Notification.requestPermission().then(permission => {
+    } catch (err) {
+        // دعم المتصفحات القديمة التي تستخدم Callback بدلاً من Promise
+        Notification.requestPermission(function (permission) {
             if (permission === 'granted') {
                 sendNotification('تم تفعيل الإشعارات بنجاح! 🔔', {
                     body: 'ستتلقى تنبيهات مباشرة عند اكتمال جلسات البومودورو والمهام.'
                 });
-                enableNotificationsBtn.style.display = 'none';
-            } else {
-                alert('تم رفض صلاحية الإشعارات.');
+                if (enableNotificationsBtn) enableNotificationsBtn.style.display = 'none';
             }
         });
-    });
+    }
+}
+
+if (enableNotificationsBtn) {
+    enableNotificationsBtn.addEventListener('click', requestNotificationPermission);
 
     if ('Notification' in window && Notification.permission === 'granted') {
         enableNotificationsBtn.style.display = 'none';
@@ -70,9 +92,9 @@ navBtns.forEach(btn => {
         navBtns.forEach(b => b.classList.remove('active'));
         appPages.forEach(p => p.classList.remove('active'));
 
-        // تفعيل الأزرار المقابلة للصفحة المحددة
         document.querySelectorAll(`[data-page="${targetPage}"]`).forEach(b => b.classList.add('active'));
-        document.getElementById(targetPage).classList.add('active');
+        const pageElement = document.getElementById(targetPage);
+        if (pageElement) pageElement.classList.add('active');
 
         if (navMenu) navMenu.classList.remove('active');
 
@@ -110,9 +132,9 @@ function updateUI() {
     const completedTasks = tasks.filter(t => t.completed).length;
     const percentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
-    percentageNumber.textContent = `${percentage}%`;
-    progressText.textContent = `${completedTasks} من ${totalTasks} مهام مكتملة اليوم`;
-    taskCount.textContent = totalTasks;
+    if (percentageNumber) percentageNumber.textContent = `${percentage}%`;
+    if (progressText) progressText.textContent = `${completedTasks} من ${totalTasks} مهام مكتملة اليوم`;
+    if (taskCount) taskCount.textContent = totalTasks - completedTasks;
 
     const statCompletedCount = document.getElementById('statCompletedCount');
     if (statCompletedCount) statCompletedCount.textContent = completedTasks;
@@ -134,11 +156,11 @@ function updateUI() {
             saveTasks();
         });
 
+        // تم إصلاح حدث النقر لحفظ حالة الإنجاز وإرسال الإشعار
         li.addEventListener('click', () => {
-            const isNowCompleted = !tasks[index].completed;
-            tasks[index].completed = isNowCompleted;
+            tasks[index].completed = !tasks[index].completed;
             
-            if (isNowCompleted) {
+            if (tasks[index].completed) {
                 sendNotification('أحسنت! 👏', {
                     body: `أنجزت المهمة: "${task.text}"`
                 });
@@ -153,13 +175,15 @@ function updateUI() {
     });
 }
 
-addBtn.addEventListener('click', () => {
-    const text = taskInput.value.trim();
-    if (!text) return alert('يرجى كتابة نص المهمة أولاً');
-    tasks.push({ text, completed: false });
-    taskInput.value = '';
-    saveTasks();
-});
+if (addBtn) {
+    addBtn.addEventListener('click', () => {
+        const text = taskInput.value.trim();
+        if (!text) return alert('يرجى كتابة نص المهمة أولاً');
+        tasks.push({ text, completed: false });
+        taskInput.value = '';
+        saveTasks();
+    });
+}
 
 // 4. مؤقت بومودورو
 let timerInterval;
@@ -175,6 +199,7 @@ const modeBtns = document.querySelectorAll('.mode-btn');
 const quickPomodoroBtn = document.getElementById('quickPomodoroBtn');
 
 function updateTimer() {
+    if (!timerDisplay || !timerProgress) return;
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
     timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -214,19 +239,23 @@ function startTimer() {
     }, 1000);
 }
 
-startTimerBtn.addEventListener('click', startTimer);
+if (startTimerBtn) startTimerBtn.addEventListener('click', startTimer);
 
-pauseTimerBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
-    timerInterval = null;
-});
+if (pauseTimerBtn) {
+    pauseTimerBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    });
+}
 
-resetTimerBtn.addEventListener('click', () => {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    timeLeft = totalTime;
-    updateTimer();
-});
+if (resetTimerBtn) {
+    resetTimerBtn.addEventListener('click', () => {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timeLeft = totalTime;
+        updateTimer();
+    });
+}
 
 if (quickPomodoroBtn) {
     quickPomodoroBtn.addEventListener('click', () => {
@@ -264,6 +293,7 @@ function saveChallenges() {
 }
 
 function renderChallenges() {
+    if (!challengesContainer) return;
     challengesContainer.innerHTML = '';
 
     const statActiveChallenges = document.getElementById('statActiveChallenges');
@@ -314,26 +344,27 @@ window.deleteChallenge = function(chIndex) {
     }
 };
 
-createChallengeBtn.addEventListener('click', () => {
-    const title = newChallengeInput.value.trim();
-    if (!title) return alert('أدخل عنوان التحدي');
-    challenges.push({
-        id: Date.now(),
-        title: title,
-        days: new Array(21).fill(false)
+if (createChallengeBtn) {
+    createChallengeBtn.addEventListener('click', () => {
+        const title = newChallengeInput.value.trim();
+        if (!title) return alert('أدخل عنوان التحدي');
+        challenges.push({
+            id: Date.now(),
+            title: title,
+            days: new Array(21).fill(false)
+        });
+        newChallengeInput.value = '';
+        saveChallenges();
     });
-    newChallengeInput.value = '';
-    saveChallenges();
-});
+}
 
 // 6. إدارة الملف الشخصي (Profile Management)
-const profileForm = document.getElementById('profileForm');
-const userNameInput = document.getElementById('userNameInput');
-const userTitleInput = document.getElementById('userTitleInput');
-const saveProfileBtn = document.getElementById('saveProfileBtn');
 const profileDisplayName = document.getElementById('profileDisplayName');
 const profileDisplayTitle = document.getElementById('profileDisplayTitle');
 const sidebarUserName = document.getElementById('sidebarUserName');
+const userNameInput = document.getElementById('userNameInput');
+const userTitleInput = document.getElementById('userTitleInput');
+const saveProfileBtn = document.getElementById('saveProfileBtn');
 const avatarUpload = document.getElementById('avatarUpload');
 const profileAvatar = document.getElementById('profileAvatar');
 const sidebarAvatar = document.getElementById('sidebarAvatar');
@@ -345,39 +376,43 @@ let userProfile = JSON.parse(localStorage.getItem('my_user_profile')) || {
 };
 
 function loadProfile() {
-    profileDisplayName.textContent = userProfile.name;
-    profileDisplayTitle.textContent = userProfile.title;
-    sidebarUserName.textContent = userProfile.name;
-    userNameInput.value = userProfile.name;
-    userTitleInput.value = userProfile.title;
+    if (profileDisplayName) profileDisplayName.textContent = userProfile.name;
+    if (profileDisplayTitle) profileDisplayTitle.textContent = userProfile.title;
+    if (sidebarUserName) sidebarUserName.textContent = userProfile.name;
+    if (userNameInput) userNameInput.value = userProfile.name;
+    if (userTitleInput) userTitleInput.value = userProfile.title;
 
     if (userProfile.avatar) {
-        profileAvatar.src = userProfile.avatar;
-        sidebarAvatar.src = userProfile.avatar;
+        if (profileAvatar) profileAvatar.src = userProfile.avatar;
+        if (sidebarAvatar) sidebarAvatar.src = userProfile.avatar;
     }
 }
 
-saveProfileBtn.addEventListener('click', () => {
-    userProfile.name = userNameInput.value.trim() || 'علي المهدي';
-    userProfile.title = userTitleInput.value.trim() || 'عضو منجز';
+if (saveProfileBtn) {
+    saveProfileBtn.addEventListener('click', () => {
+        userProfile.name = userNameInput.value.trim() || 'علي المهدي';
+        userProfile.title = userTitleInput.value.trim() || 'عضو منجز';
 
-    localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
-    loadProfile();
-    alert('تم حفظ البيانات الشخصية بنجاح! ✨');
-});
+        localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
+        loadProfile();
+        alert('تم حفظ البيانات الشخصية بنجاح! ✨');
+    });
+}
 
-avatarUpload.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            userProfile.avatar = event.target.result;
-            localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
-            loadProfile();
-        };
-        reader.readAsDataURL(file);
-    }
-});
+if (avatarUpload) {
+    avatarUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                userProfile.avatar = event.target.result;
+                localStorage.setItem('my_user_profile', JSON.stringify(userProfile));
+                loadProfile();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
 
 // 7. الرسوم البيانية الإحصائية
 let weeklyChartInstance, statusChartInstance;
