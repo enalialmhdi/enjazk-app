@@ -7,16 +7,16 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="dark-theme">
 
     <div class="app-container">
         <!-- القائمة الجانبية -->
         <aside class="sidebar">
             <div class="brand">
-                <span class="material-symbols-rounded logo-icon">check_circle</span>
+                <span class="material-symbols-rounded logo-icon">task_alt</span>
                 <h2>إنجازك</h2>
             </div>
 
@@ -30,7 +30,7 @@
 
             <nav class="nav-menu">
                 <button class="nav-btn active" data-page="tasks-page">
-                    <span class="material-symbols-rounded">task_alt</span>
+                    <span class="material-symbols-rounded">check_box</span>
                     <span>المهام اليومية</span>
                 </button>
                 <button class="nav-btn" data-page="pomodoro-page">
@@ -38,26 +38,30 @@
                     <span>مؤقت التركيز</span>
                 </button>
                 <button class="nav-btn" data-page="challenges-page">
-                    <span class="material-symbols-rounded">military_tech</span>
+                    <span class="material-symbols-rounded">emoji_events</span>
                     <span>التحديات 21 يوم</span>
                 </button>
                 <button class="nav-btn" data-page="stats-page">
-                    <span class="material-symbols-rounded">analytics</span>
+                    <span class="material-symbols-rounded">bar_chart</span>
                     <span>الإحصائيات والتقارير</span>
                 </button>
                 <button class="nav-btn" data-page="notes-page">
-                    <span class="material-symbols-rounded">edit_note</span>
+                    <span class="material-symbols-rounded">sticky_note_2</span>
                     <span>الملاحظات السريعة</span>
                 </button>
                 <button class="nav-btn" data-page="profile-page">
-                    <span class="material-symbols-rounded">person</span>
+                    <span class="material-symbols-rounded">account_circle</span>
                     <span>الملف الشخصي</span>
                 </button>
             </nav>
 
             <div class="sidebar-footer">
+                <button id="themeToggleBtn" class="theme-toggle-btn">
+                    <span class="material-symbols-rounded" id="themeIcon">light_mode</span>
+                    <span id="themeText">الوضع الفاتح</span>
+                </button>
                 <button id="enableNotificationsBtn" class="notification-btn">
-                    <span class="material-symbols-rounded">notifications_active</span>
+                    <span class="material-symbols-rounded">notifications</span>
                     <span>تفعيل الإشعارات</span>
                 </button>
             </div>
@@ -67,33 +71,37 @@
         <main class="main-content">
             <header class="mobile-header">
                 <div class="brand">
-                    <span class="material-symbols-rounded logo-icon">check_circle</span>
+                    <span class="material-symbols-rounded logo-icon">task_alt</span>
                     <h2>إنجازك</h2>
                 </div>
-                <button id="mobileNavToggle" class="mobile-toggle-btn">
-                    <span class="material-symbols-rounded">menu</span>
-                </button>
+                <div class="header-actions">
+                    <button id="mobileThemeToggle" class="icon-only-btn">
+                        <span class="material-symbols-rounded">light_mode</span>
+                    </button>
+                    <button id="mobileNavToggle" class="mobile-toggle-btn">
+                        <span class="material-symbols-rounded">menu</span>
+                    </button>
+                </div>
             </header>
 
-            <!-- 1. صفحة المهام اليومية مع شريط التاريخ -->
+            <!-- 1. صفحة المهام اليومية -->
             <section id="tasks-page" class="app-page active">
                 <div class="page-header">
                     <h2>مهامي اليومية 📝</h2>
                     <p>نظم مهامك وانجزها خطوة بخطوة</p>
                 </div>
 
-                <!-- شريط اختيار وتنقل التاريخ -->
                 <div class="date-picker-card">
                     <button id="prevDayBtn" class="date-nav-btn" title="اليوم السابق">
-                        <span class="material-symbols-rounded">chevron_right</span>
+                        <span class="material-symbols-rounded">arrow_forward_ios</span>
                     </button>
                     <div class="date-display-info" id="datePickerTrigger">
-                        <span class="material-symbols-rounded">calendar_today</span>
+                        <span class="material-symbols-rounded">calendar_month</span>
                         <span id="currentSelectedDateText">اليوم</span>
                         <input type="date" id="hiddenDatePicker" style="display:none;">
                     </div>
                     <button id="nextDayBtn" class="date-nav-btn" title="اليوم التالي">
-                        <span class="material-symbols-rounded">chevron_left</span>
+                        <span class="material-symbols-rounded">arrow_back_ios</span>
                     </button>
                     <button id="todayBtn" class="today-shortcut-btn">اليوم الحالي</button>
                 </div>
@@ -111,7 +119,7 @@
 
                 <div class="add-task-card">
                     <input type="text" id="taskInput" placeholder="أضف مهمة جديدة لهذا اليوم...">
-                    <button id="addBtn"><span class="material-symbols-rounded">add</span> إضافة</button>
+                    <button id="addBtn"><span class="material-symbols-rounded">add_circle</span> إضافة</button>
                 </div>
 
                 <ul id="taskList" class="task-list"></ul>
@@ -147,7 +155,7 @@
                             <span class="material-symbols-rounded">pause</span> إيقاف
                         </button>
                         <button id="resetTimerBtn" class="control-btn reset-btn">
-                            <span class="material-symbols-rounded">refresh</span> إعادة
+                            <span class="material-symbols-rounded">restart_alt</span> إعادة
                         </button>
                     </div>
                 </div>
@@ -162,7 +170,7 @@
 
                 <div class="add-task-card">
                     <input type="text" id="newChallengeInput" placeholder="اكتب اسم العادة أو التحدي الجديد...">
-                    <button id="createChallengeBtn"><span class="material-symbols-rounded">add</span> إنشاء تحدي</button>
+                    <button id="createChallengeBtn"><span class="material-symbols-rounded">add_task</span> إنشاء تحدي</button>
                 </div>
 
                 <div id="challengesContainer" class="challenges-grid"></div>
@@ -177,14 +185,14 @@
 
                 <div class="stats-overview-grid">
                     <div class="stat-card">
-                        <span class="material-symbols-rounded icon">check_circle</span>
+                        <span class="material-symbols-rounded icon">fact_check</span>
                         <div class="info">
                             <span class="label">مهام مكتملة اليوم</span>
                             <h3 id="statCompletedCount">0</h3>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <span class="material-symbols-rounded icon">military_tech</span>
+                        <span class="material-symbols-rounded icon">workspace_premium</span>
                         <div class="info">
                             <span class="label">التحديات النشطة</span>
                             <h3 id="statActiveChallenges">0</h3>
@@ -208,16 +216,20 @@
                 </div>
             </section>
 
-            <!-- 5. صفحة الملاحظات السريعة -->
+            <!-- 5. صفحة الملاحظات السريعة المطورة -->
             <section id="notes-page" class="app-page">
                 <div class="page-header">
-                    <h2>الملاحظات السريعة 📌</h2>
-                    <p>دَوّن أفكارك وخواطرك المهمة في مكان واحد</p>
+                    <h2>الملاحظات والأفكار السريعة 💡</h2>
+                    <p>احتفظ بأفكارك، روابطك، وخواطرك الهامة مقسمة بكروت منظمّة</p>
                 </div>
 
-                <div class="notes-card">
-                    <textarea id="quickNotes" placeholder="اكتب ملاحظاتك وأفكارك هنا... يتم الحفظ تلقائياً!"></textarea>
+                <div class="add-note-card">
+                    <input type="text" id="noteTitleInput" placeholder="عنوان الملاحظة...">
+                    <textarea id="noteContentInput" placeholder="اكتب تفاصيل الملاحظة هنا..."></textarea>
+                    <button id="addNoteBtn"><span class="material-symbols-rounded">note_add</span> حفظ الملاحظة</button>
                 </div>
+
+                <div id="notesGrid" class="notes-grid"></div>
             </section>
 
             <!-- 6. صفحة الملف الشخصي -->
@@ -249,7 +261,9 @@
                             <label>المسمى / الهدف</label>
                             <input type="text" id="userTitleInput" placeholder="مثال: مطور، طالب، مصمم">
                         </div>
-                        <button id="saveProfileBtn" class="save-btn">حفظ التغييرات</button>
+                        <button id="saveProfileBtn" class="save-btn">
+                            <span class="material-symbols-rounded">save</span> حفظ التغييرات
+                        </button>
                     </div>
                 </div>
             </section>
