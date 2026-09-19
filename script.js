@@ -33,7 +33,6 @@ function playAudioAlert() {
 async function sendNotification(title, options = {}) {
     playAudioAlert();
 
-    // إرسال الإشعار عبر Service Worker ليظهر في أعلى الشاشة وشاشة القفل
     if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         try {
             const reg = await navigator.serviceWorker.ready;
@@ -87,14 +86,13 @@ if (enableNotificationsBtn) {
     }
 }
 
-// تذكير تلقائي ينبثق أعلى الهاتف عند الخروج من التطبيق
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && Notification.permission === 'granted') {
         setTimeout(() => {
             sendNotification('عد إلينا يا بطل! 🚀', {
                 body: 'لا تنسَ متابعة تقدمك وإكمال بقية مهامك اليوم.'
             });
-        }, 30000); // يرسل الإشعار بعد 30 ثانية من مغادرة التطبيق
+        }, 30000);
     }
 });
 
@@ -130,73 +128,132 @@ navBtns.forEach(btn => {
     });
 });
 
-// 3. إدارة المهام والملاحظات
+// 3. إدارة التواريخ والمهام اليومية والأرشيف
+function getFormattedDate(dateObj) {
+    const d = new Date(dateObj);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+let selectedDate = getFormattedDate(new Date());
+
 const taskInput = document.getElementById('taskInput');
 const addBtn = document.getElementById('addBtn');
 const taskList = document.getElementById('taskList');
-const taskCount = document.getElementById('taskCount');
 const percentageNumber = document.getElementById('percentageNumber');
+const progressBarFill = document.getElementById('progressBarFill');
 const progressText = document.getElementById('progressText');
-const quickNotes = document.getElementById('quickNotes');
 
-let tasks = JSON.parse(localStorage.getItem('my_habits')) || [];
-if (quickNotes) {
-    quickNotes.value = localStorage.getItem('my_quick_notes') || '';
-    quickNotes.addEventListener('input', () => {
-        localStorage.setItem('my_quick_notes', quickNotes.value);
-    });
-}
+const prevDayBtn = document.getElementById('prevDayBtn');
+const nextDayBtn = document.getElementById('nextDayBtn');
+const todayBtn = document.getElementById('todayBtn');
+const currentSelectedDateText = document.getElementById('currentSelectedDateText');
+const hiddenDatePicker = document.getElementById('hiddenDatePicker');
+const datePickerTrigger = document.getElementById('datePickerTrigger');
+
+// جلب المهام المبوّبة بالتاريخ من LocalStorage
+let allTasksByDate = JSON.parse(localStorage.getItem('my_habits_by_date')) || {};
 
 function saveTasks() {
-    localStorage.setItem('my_habits', JSON.stringify(tasks));
+    localStorage.setItem('my_habits_by_date', JSON.stringify(allTasksByDate));
+    updateUI();
+}
+
+function changeDate(daysOffset) {
+    const current = new Date(selectedDate);
+    current.setDate(current.getDate() + daysOffset);
+    selectedDate = getFormattedDate(current);
     updateUI();
 }
 
 function updateUI() {
+    const todayStr = getFormattedDate(new Date());
+    
+    if (selectedDate === todayStr) {
+        currentSelectedDateText.textContent = `اليوم (${selectedDate})`;
+    } else {
+        currentSelectedDateText.textContent = selectedDate;
+    }
+
+    if (hiddenDatePicker) hiddenDatePicker.value = selectedDate;
+
+    const tasks = allTasksByDate[selectedDate] || [];
+
     taskList.innerHTML = '';
     const totalTasks = tasks.length;
     const completedTasks = tasks.filter(t => t.completed).length;
     const percentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
     if (percentageNumber) percentageNumber.textContent = `${percentage}%`;
-    if (progressText) progressText.textContent = `${completedTasks} من ${totalTasks} مهام مكتملة اليوم`;
-    if (taskCount) taskCount.textContent = totalTasks - completedTasks;
+    if (progressBarFill) progressBarFill.style.width = `${percentage}%`;
+    if (progressText) progressText.textContent = `${completedTasks} من ${totalTasks} مهام مكتملة في هذا اليوم`;
 
     const statCompletedCount = document.getElementById('statCompletedCount');
     if (statCompletedCount) statCompletedCount.textContent = completedTasks;
 
-    tasks.forEach((task, index) => {
-        const li = document.createElement('li');
-        if (task.completed) li.classList.add('completed');
+    if (tasks.length === 0) {
+        const emptyLi = document.createElement('li');
+        emptyLi.style.justifyContent = 'center';
+        emptyLi.style.color = '#9ca3af';
+        emptyLi.textContent = 'لا توجد مهام مسجلة لهذا التاريخ.';
+        taskList.appendChild(emptyLi);
+    } else {
+        tasks.forEach((task, index) => {
+            const li = document.createElement('li');
+            if (task.completed) li.classList.add('completed');
 
-        const span = document.createElement('span');
-        span.textContent = task.text;
+            const span = document.createElement('span');
+            span.textContent = task.text;
 
-        const delBtn = document.createElement('button');
-        delBtn.className = 'delete-task-btn';
-        delBtn.innerHTML = `<span class="material-symbols-rounded">delete</span>`;
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-task-btn';
+            delBtn.innerHTML = `<span class="material-symbols-rounded">delete</span>`;
 
-        delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            tasks.splice(index, 1);
-            saveTasks();
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                allTasksByDate[selectedDate].splice(index, 1);
+                if (allTasksByDate[selectedDate].length === 0) {
+                    delete allTasksByDate[selectedDate];
+                }
+                saveTasks();
+            });
+
+            li.addEventListener('click', () => {
+                allTasksByDate[selectedDate][index].completed = !allTasksByDate[selectedDate][index].completed;
+                
+                if (allTasksByDate[selectedDate][index].completed) {
+                    sendNotification('أحسنت! 👏', {
+                        body: `أنجزت المهمة: "${task.text}"`
+                    });
+                }
+                
+                saveTasks();
+            });
+
+            li.appendChild(span);
+            li.appendChild(delBtn);
+            taskList.appendChild(li);
         });
+    }
+}
 
-        li.addEventListener('click', () => {
-            tasks[index].completed = !tasks[index].completed;
-            
-            if (tasks[index].completed) {
-                sendNotification('أحسنت! 👏', {
-                    body: `أنجزت المهمة: "${task.text}"`
-                });
-            }
-            
-            saveTasks();
-        });
+// أحداث التنقل واختيار التواريخ
+if (prevDayBtn) prevDayBtn.addEventListener('click', () => changeDate(-1));
+if (nextDayBtn) nextDayBtn.addEventListener('click', () => changeDate(1));
+if (todayBtn) todayBtn.addEventListener('click', () => {
+    selectedDate = getFormattedDate(new Date());
+    updateUI();
+});
 
-        li.appendChild(span);
-        li.appendChild(delBtn);
-        taskList.appendChild(li);
+if (datePickerTrigger && hiddenDatePicker) {
+    datePickerTrigger.addEventListener('click', () => hiddenDatePicker.showPicker ? hiddenDatePicker.showPicker() : hiddenDatePicker.click());
+    hiddenDatePicker.addEventListener('change', (e) => {
+        if (e.target.value) {
+            selectedDate = e.target.value;
+            updateUI();
+        }
     });
 }
 
@@ -204,13 +261,27 @@ if (addBtn) {
     addBtn.addEventListener('click', () => {
         const text = taskInput.value.trim();
         if (!text) return alert('يرجى كتابة نص المهمة أولاً');
-        tasks.push({ text, completed: false });
+        
+        if (!allTasksByDate[selectedDate]) {
+            allTasksByDate[selectedDate] = [];
+        }
+
+        allTasksByDate[selectedDate].push({ text, completed: false });
         taskInput.value = '';
         saveTasks();
     });
 }
 
-// 4. مؤقت بومودورو
+// 4. الملاحظات السريعة
+const quickNotes = document.getElementById('quickNotes');
+if (quickNotes) {
+    quickNotes.value = localStorage.getItem('my_quick_notes') || '';
+    quickNotes.addEventListener('input', () => {
+        localStorage.setItem('my_quick_notes', quickNotes.value);
+    });
+}
+
+// 5. مؤقت بومودورو
 let timerInterval;
 let totalTime = 25 * 60;
 let timeLeft = 25 * 60;
@@ -221,7 +292,6 @@ const startTimerBtn = document.getElementById('startTimerBtn');
 const pauseTimerBtn = document.getElementById('pauseTimerBtn');
 const resetTimerBtn = document.getElementById('resetTimerBtn');
 const modeBtns = document.querySelectorAll('.mode-btn');
-const quickPomodoroBtn = document.getElementById('quickPomodoroBtn');
 
 function updateTimer() {
     if (!timerDisplay || !timerProgress) return;
@@ -256,7 +326,6 @@ function startTimer() {
         } else {
             clearInterval(timerInterval);
             timerInterval = null;
-            
             sendNotification('انتهت جلسة التركيز! 🎉', {
                 body: 'حان وقت الاستراحة أو الانتقال للمهمة التالية.'
             });
@@ -265,45 +334,18 @@ function startTimer() {
 }
 
 if (startTimerBtn) startTimerBtn.addEventListener('click', startTimer);
+if (pauseTimerBtn) pauseTimerBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+});
+if (resetTimerBtn) resetTimerBtn.addEventListener('click', () => {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timeLeft = totalTime;
+    updateTimer();
+});
 
-if (pauseTimerBtn) {
-    pauseTimerBtn.addEventListener('click', () => {
-        clearInterval(timerInterval);
-        timerInterval = null;
-    });
-}
-
-if (resetTimerBtn) {
-    resetTimerBtn.addEventListener('click', () => {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        timeLeft = totalTime;
-        updateTimer();
-    });
-}
-
-if (quickPomodoroBtn) {
-    quickPomodoroBtn.addEventListener('click', () => {
-        navBtns.forEach(b => b.classList.remove('active'));
-        appPages.forEach(p => p.classList.remove('active'));
-
-        const pomodoroNavBtn = document.querySelector('[data-page="pomodoro-page"]');
-        const pomodoroPage = document.getElementById('pomodoro-page');
-
-        if (pomodoroNavBtn && pomodoroPage) {
-            pomodoroNavBtn.classList.add('active');
-            pomodoroPage.classList.add('active');
-        }
-
-        clearInterval(timerInterval);
-        timerInterval = null;
-        timeLeft = totalTime;
-        updateTimer();
-        startTimer();
-    });
-}
-
-// 5. التحديات اليومية
+// 6. التحديات اليومية
 let challenges = JSON.parse(localStorage.getItem('my_challenges')) || [
     { id: 1, title: 'تحدي 21 يوم قراءة وتركيز', days: [true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false] }
 ];
@@ -338,8 +380,7 @@ function renderChallenges() {
                     <span style="font-weight:bold; color:#10b981;">(${progressPercent}%)</span>
                 </div>
                 <button class="delete-challenge-btn" onclick="deleteChallenge(${chIndex})">
-                    <span class="material-symbols-rounded">delete</span>
-                    حذف
+                    <span class="material-symbols-rounded">delete</span> حذف
                 </button>
             </div>
             <div class="challenge-progress-bar">
@@ -383,7 +424,7 @@ if (createChallengeBtn) {
     });
 }
 
-// 6. إدارة الملف الشخصي (Profile Management)
+// 7. إدارة الملف الشخصي
 const profileDisplayName = document.getElementById('profileDisplayName');
 const profileDisplayTitle = document.getElementById('profileDisplayTitle');
 const sidebarUserName = document.getElementById('sidebarUserName');
@@ -439,7 +480,7 @@ if (avatarUpload) {
     });
 }
 
-// 7. الرسوم البيانية الإحصائية
+// 8. الرسوم البيانية والإحصائيات الأسبوعية والشهرية
 let weeklyChartInstance, statusChartInstance;
 
 function renderCharts() {
@@ -451,33 +492,77 @@ function renderCharts() {
     if (weeklyChartInstance) weeklyChartInstance.destroy();
     if (statusChartInstance) statusChartInstance.destroy();
 
+    // إحصائيات آخر 7 أيام
+    const last7DaysLabels = [];
+    const last7DaysData = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = getFormattedDate(d);
+        const dayName = d.toLocaleDateString('ar-EG', { weekday: 'short' });
+        
+        last7DaysLabels.push(dayName);
+        const dayTasks = allTasksByDate[dateStr] || [];
+        const completed = dayTasks.filter(t => t.completed).length;
+        last7DaysData.push(completed);
+    }
+
     weeklyChartInstance = new Chart(weeklyCtx, {
         type: 'bar',
         data: {
-            labels: ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
+            labels: last7DaysLabels,
             datasets: [{
                 label: 'المهام المنجزة',
-                data: [5, 7, 8, 6, 9, 4, 8],
+                data: last7DaysData,
                 backgroundColor: '#6366f1',
                 borderRadius: 8
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+            }
+        }
     });
 
-    const completedCount = tasks.filter(t => t.completed).length;
-    const pendingCount = tasks.length - completedCount;
+    // إحصائيات الشهر (آخر 30 يوماً)
+    let monthlyCompleted = 0;
+    let monthlyTotal = 0;
+
+    for (let i = 0; i < 30; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = getFormattedDate(d);
+        const dayTasks = allTasksByDate[dateStr] || [];
+        
+        monthlyTotal += dayTasks.length;
+        monthlyCompleted += dayTasks.filter(t => t.completed).length;
+    }
+
+    const monthlyPending = monthlyTotal - monthlyCompleted;
 
     statusChartInstance = new Chart(statusCtx, {
         type: 'doughnut',
         data: {
-            labels: ['مكتملة', 'قيد الانتظار'],
+            labels: ['مكتملة هذا الشهر', 'غير مكتملة'],
             datasets: [{
-                data: [completedCount || 1, pendingCount],
-                backgroundColor: ['#10b981', '#f59e0b']
+                data: [monthlyCompleted, monthlyPending],
+                backgroundColor: ['#10b981', '#ef4444']
             }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: `إجمالي الإنجاز الشهري (${monthlyCompleted} من ${monthlyTotal} مهمة)`
+                }
+            }
+        }
     });
 }
 
